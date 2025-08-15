@@ -1,0 +1,4 @@
+streamlit
+reportlab 
+google-generativeai
+streamlit-lottie

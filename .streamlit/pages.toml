@@ -1,0 +1,12 @@
+[[pages]]
+path = "app/main.py"
+name = "Introduction"
+
+[[pages]]
+path = "app/pages/1_AI_Assistance.py"
+name = "AI Assistance"
+icon = "🤖"
+
+[[pages]]
+path = "app/pages/3_Declaration_and_Submit.py"
+name = "Declaration & Submit"
