@@ -8,9 +8,12 @@ from app.common_form_sections import register_component
 from app.utils import inst_key
 from app.utils import persist_text_input, persist_selectbox
 
+from app.controlled_lists import get_countries
+
 SA_PROVINCES = ["", "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
                 "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"]
-COUNTRIES = ["", "South Africa", "United Kingdom", "United States"]
+
+# For non-SA addresses, we'll use a simple text input instead of a selectbox
 
 def _postal_ok(code: str, country: str) -> bool:
     if (country or "").strip() == "South Africa":
@@ -29,15 +32,17 @@ class AddressComponent(SectionComponent):
             persist_text_input("Unit Number (optional)", inst_key(ns, instance_id, "unit_no"))
             persist_text_input("Street Number", inst_key(ns, instance_id, "street_no"))
             persist_text_input("Suburb", inst_key(ns, instance_id, "suburb"))
-            persist_selectbox("Country", inst_key(ns, instance_id, "country"), options=COUNTRIES)
+            persist_selectbox("Country", inst_key(ns, instance_id, "country"), options=get_countries())
         with col2:
             persist_text_input("Complex Name (optional)", inst_key(ns, instance_id, "complex"))
             persist_text_input("Street Name", inst_key(ns, instance_id, "street_name"))
             persist_text_input("City", inst_key(ns, instance_id, "city"))
-            if st.session_state.get(inst_key(ns, instance_id, "country")) == "South Africa":
+            # Province field - dropdown for SA, text input for other countries  
+            selected_country = st.session_state.get(inst_key(ns, instance_id, "country"), "")
+            if selected_country == "South Africa":
                 persist_selectbox("Province", inst_key(ns, instance_id, "province"), options=SA_PROVINCES)
             else:
-                st.text_input("Province", key=inst_key(ns, instance_id, "province"), value="Other", disabled=True)
+                persist_text_input("Province/State/Region", inst_key(ns, instance_id, "province"))
         
         # Postal Code
         pc_label = "Postal Code (must be 4 digits)" if st.session_state.get(inst_key(ns, instance_id, "country")) == "South Africa" else "Postal Code"

@@ -2,6 +2,16 @@
 
 A comprehensive **Streamlit-based entity onboarding application** that supports 17 different entity types with dynamic form generation, reusable components, and intelligent validation. Built using a **component-based architecture** for maximum modularity and maintainability.
 
+## 🆕 **Latest Updates**
+
+- **🌍 Comprehensive Country Support**: Full integration with 220+ countries from CSV data source
+- **👤 Authorised Representative**: Complete individual capture for all entity types
+- **🎨 Enhanced UI**: Gradient text styling, Lottie animations, custom avatars
+- **📧 Improved Email System**: Context-aware submissions with proper Entity Onboarding branding
+- **🔧 Robust Session Management**: Automatic cleanup of legacy data, improved state isolation
+- **📋 Refined Controlled Lists**: Exact specifications for all dropdown options
+- **🖼️ Consistent Branding**: Unified favicon and visual identity across all pages
+
 ## 🚀 **Quick Start**
 
 ### Prerequisites
@@ -67,10 +77,10 @@ EasyETFs_Data_App/
 │
 ├── app/                          # Main application code
 │   ├── main.py                   # 🏠 Introduction page - Entity selection & form rendering
-│   ├── controlled_lists.py       # 📋 Centralized predefined options/lists
-│   ├── utils.py                  # 🔧 Utilities, state management, persistence helpers
-│   ├── styling.py                # 🎨 CSS styling definitions
-│   ├── email_sender.py           # 📧 Email submission functionality
+│   ├── controlled_lists.py       # 📋 Centralized predefined options/lists (220+ countries, industries, etc.)
+│   ├── utils.py                  # 🔧 Utilities, state management, persistence helpers, session cleanup
+│   ├── styling.py                # 🎨 CSS styling definitions (gradient text, animations)
+│   ├── email_sender.py           # 📧 Entity Onboarding email submission functionality
 │   ├── pdf_generator.py          # 📄 PDF generation utilities
 │   │
 │   ├── pages/                    # Application pages
@@ -86,8 +96,10 @@ EasyETFs_Data_App/
 │   │   ├── __init__.py           # Component registry system
 │   │   ├── base.py               # SectionComponent interface
 │   │   ├── natural_persons.py    # 👥 Person collection with ID validation
-│   │   ├── address.py            # 🏠 Address with country-specific validation
-│   │   └── phone.py              # 📞 Phone with international dialing codes
+│   │   ├── address.py            # 🏠 Address with country-specific validation (220+ countries)
+│   │   ├── phone.py              # 📞 Phone with international dialing codes
+│   │   ├── authorised_representative.py  # 👤 Individual person details component
+│   │   └── CountryList.csv       # 🌍 Comprehensive country database (220+ countries)
 │   │
 │   └── forms/                    # 📋 Form engine & specifications
 │       ├── engine.py             # ⚙️ Form rendering, validation & serialization engine
@@ -113,7 +125,10 @@ EasyETFs_Data_App/
 │           └── other.py          # Other entity types form
 │
 ├── assets/                       # Static assets
-│   └── logos/                    # Logo files and branding
+│   └── logos/                    # Logo files, branding, animations
+│       ├── favicon.svg           # 🖼️ Application favicon (consistent across pages)
+│       ├── profile.svg           # 👤 User avatar for chat interface
+│       └── lottie-jsons/         # 🎬 Animation files for AI Assistance page
 │
 ├── knowledge_set.md              # AI assistant knowledge base
 ├── project_details.md            # Detailed technical architecture documentation
@@ -125,27 +140,34 @@ EasyETFs_Data_App/
 
 ## 🎯 **Supported Entity Types**
 
-The system supports **17 entity types** (alphabetical order):
+The system supports **17 entity types** (alphabetical order) with **Authorised Representative** capture for all:
 
 | Entity Type | Min. People | Role Label | Special Requirements |
 |-------------|-------------|------------|---------------------|
-| Burial Society | 1 | Committee Member | - |
-| Charity Organisation | 1 | Board Member | - |
-| Church | 1 | Leader | - |
-| Closed Corporation | 1 | Member | - |
-| Community Group | 1 | Committee Member | - |
-| Company | 1 | Director | Directors + Beneficial Owners (>5%) |
-| Cultural Association | 1 | Committee Member | - |
-| Environmental Group | 1 | Committee Member | - |
-| Investment Club | 2 | Member | - |
-| Partnership | 2 | Partner | - |
-| Savings Club | 2 | Member | - |
-| School | 1 | Governing Body Member | - |
-| Social Club | 1 | Committee Member | - |
-| Sports Club | 1 | Committee Member | - |
-| Stokvel | 2 | Member | - |
-| Trust | 1 | Trustee | **Masters Office field required** |
-| Other | 0 | Person | Catch-all for unlisted entities |
+| Burial Society | 1 | Committee Member | + Authorised Representative |
+| Charity Organisation | 1 | Board Member | + Authorised Representative |
+| Church | 1 | Leader | + Authorised Representative |
+| Closed Corporation | 1 | Member | + Authorised Representative |
+| Community Group | 1 | Committee Member | + Authorised Representative |
+| Company | 1 | Director | Directors + Beneficial Owners (>5%) + Authorised Representative |
+| Cultural Association | 1 | Committee Member | + Authorised Representative |
+| Environmental Group | 1 | Committee Member | + Authorised Representative |
+| Investment Club | 2 | Member | + Authorised Representative |
+| Partnership | 2 | Partner | + Authorised Representative |
+| Savings Club | 2 | Member | + Authorised Representative |
+| School | 1 | Governing Body Member | + Authorised Representative |
+| Social Club | 1 | Committee Member | + Authorised Representative |
+| Sports Club | 1 | Committee Member | + Authorised Representative |
+| Stokvel | 2 | Member | + Authorised Representative |
+| Trust | 1 | Trustee | **Masters Office field required** + Authorised Representative |
+| Other | 0 | Person | Catch-all for unlisted entities + Authorised Representative |
+
+### **✨ New: Authorised Representative Section**
+Every entity type now includes a comprehensive **Authorised Representative** section capturing:
+- Personal details (Title, Name, Gender, DOB, Marital Status)
+- Identification (SA ID with Luhn validation, Foreign ID, or Foreign Passport)
+- Contact information (Email, Phone, Address)
+- Citizenship and Country of Residence
 
 ---
 
@@ -153,13 +175,20 @@ The system supports **17 entity types** (alphabetical order):
 
 ### **1. Controlled Lists System** (`app/controlled_lists.py`)
 
-Centralized management of all predefined options:
+Centralized management of all predefined options with **exact specifications**:
 
-- **📊 Source of Funds** (28 options): Business Operating Income, Commission, Company Profits, etc.
-- **🏭 Industry Classification** (41 options): Accounting Services, Banking, Healthcare, etc.
-- **👤 Member Roles** (12 options): Chairperson, Secretary, Treasurer, Director, etc.
-- **🌍 Countries** (11 options): South Africa, UK, US, Australia, etc.
-- **🏢 Entity Types** (17 types): All supported entity types
+- **📊 Source of Funds** (26 options): Business Operating Income, Commission, Company Profits, etc.
+- **🏭 Industry Classification** (75+ options): Accounting Services, Banking, Healthcare, etc.
+- **👤 Member Roles** (11 options): Chairperson, Secretary, Treasurer, Director, etc.
+- **🌍 Countries** (220+ options): **Comprehensive global coverage** loaded from CSV with South Africa prioritized
+- **🏢 Entity Types** (17 types): All supported entity types in alphabetical order ("Other" always last)
+- **👤 Personal Details** (NEW): Title options (7), Gender options (3), Marital Status options (3)
+
+### **🆕 Enhanced Country Support**
+- **📁 CSV Integration**: Countries loaded from `app/common_form_sections/CountryList.csv`
+- **🇿🇦 South Africa Priority**: Always appears first (after empty option) in dropdowns
+- **🌍 Global Coverage**: 220+ countries with proper sorting and validation
+- **🔧 Centralized Management**: Single source of truth for all country dropdowns
 
 **Key Functions:**
 ```python
@@ -167,8 +196,11 @@ from app.controlled_lists import (
     get_source_of_funds_options,
     get_industry_options,
     get_member_role_options,
-    get_countries,
-    get_entity_types
+    get_countries,              # NEW: 220+ countries from CSV
+    get_entity_types,
+    get_title_options,          # NEW: Personal titles
+    get_gender_options,         # NEW: Gender options
+    get_marital_status_options  # NEW: Marital status options
 )
 ```
 
@@ -205,6 +237,29 @@ class FormSpec:
 
 ### **3. Reusable Components** (`app/common_form_sections/`)
 
+#### **🆕 Authorised Representative Component**
+**NEW**: Captures individual person details (not collections) for the entity representative:
+
+```python
+# Usage in form specs
+Section(
+    title="Authorised Representative", 
+    component_id="authorised_representative",
+    component_args={
+        "instance_id": "auth_rep",
+        "title": "Authorised Representative"
+    }
+)
+```
+
+**Features:**
+- Personal details with controlled lists (Title, Gender, Marital Status)
+- Multiple ID types with validation (SA ID with Luhn, Foreign ID, Foreign Passport)
+- Address integration (reuses AddressComponent)
+- Phone integration (reuses PhoneComponent) 
+- Email validation and citizenship/residence country selection
+- Age validation (must be 18+) and comprehensive error handling
+
 #### **Natural Persons Component**
 Handles collections of people with comprehensive validation:
 
@@ -232,13 +287,15 @@ Section(
 - Member role selection from controlled list
 - Instance isolation for multiple collections on same page
 
-#### **Address Component**
-Physical address collection with country-specific validation:
+#### **Address Component** 
+Physical address collection with **enhanced international support**:
 
 **Features:**
 - Two-column layout (Unit/Street Number + Complex/Street Name)
-- SA-specific: 4-digit postal codes, province selection
-- International: Flexible postal code format
+- **🇿🇦 SA-specific**: 4-digit postal codes, province dropdown (9 provinces)
+- **🌍 International**: Flexible postal code format, free-text province/state/region  
+- **🆕 220+ Countries**: Full global coverage with South Africa prioritized
+- **🔧 Smart Validation**: Dynamic field types based on selected country
 - Required fields: Street Number, Street Name, Suburb, City
 
 #### **Phone Component**
@@ -250,6 +307,11 @@ Phone number collection with international support:
 - International: 6-15 digits allowed
 
 ### **4. State Management System** (`app/utils.py`)
+
+**🆕 Enhanced with Session Cleanup:**
+- **🔧 Automatic Legacy Cleanup**: Removes problematic session values (e.g., "Other" in province fields)
+- **🛡️ Error Prevention**: Prevents "not in iterable" errors from outdated state
+- **🔄 Continuous Protection**: Cleanup runs on every initialization
 
 **Namespace & Instance Scoping:**
 ```python
@@ -283,6 +345,26 @@ def persist_multiselect(label: str, state_key: str, **kwargs)
 
 ---
 
+---
+
+## 🎨 **Enhanced User Interface**
+
+### **🆕 Modern Visual Design**
+- **🌈 Gradient Text Styling**: Beautiful gradient titles on Introduction, AI Assistance, and Declaration pages
+- **🎬 Lottie Animations**: Random animations on AI Assistance page for engaging user experience
+- **👤 Custom Avatars**: Profile SVG for user chat messages, favicon SVG for assistant messages
+- **🖼️ Consistent Branding**: Unified favicon across all pages (favicon.svg)
+- **🎯 Light Theme**: Clean, professional light mode as default theme
+
+### **🤖 AI Assistance Enhancements**
+- **📚 Updated Knowledge Base**: Relevant Entity Onboarding information replacing outdated content
+- **🎨 Gradient Title**: Matches main page styling with "Entity Onboarding Assistant"
+- **🎬 Random Lottie**: Different animation on each page load from `assets/logos/lottie-jsons/`
+- **👤 User Avatar**: Custom profile.svg for user messages in chat interface
+- **🤖 Assistant Avatar**: Favicon.svg for consistent assistant branding
+
+---
+
 ## 🔧 **Development Guide**
 
 ### **Adding a New Entity Type**
@@ -310,6 +392,14 @@ SPEC = FormSpec(
         Section(
             title="Entity Details",
             fields=create_entity_details_fields()
+        ),
+        Section(  # NEW: Required for all entity types
+            title="Authorised Representative",
+            component_id="authorised_representative",
+            component_args={
+                "instance_id": "auth_rep",
+                "title": "Authorised Representative"
+            }
         ),
         Section(
             title="Physical Address",
@@ -401,7 +491,7 @@ def _add_conditional_validation_rules(spec: FormSpec, ns: str, errs: List[str]):
 ```python
 # app/controlled_lists.py
 
-# Add new options to existing lists
+# Add new options to existing lists (maintain alphabetical order)
 SOURCE_OF_FUNDS_OPTIONS.extend([
     "New Funding Source",
     "Another Option"
@@ -416,6 +506,19 @@ NEW_CATEGORY_OPTIONS = [
 
 def get_new_category_options():
     return NEW_CATEGORY_OPTIONS.copy()
+```
+
+### **🆕 Adding New Countries**
+
+To add countries to the comprehensive list:
+
+```python
+# Update app/common_form_sections/CountryList.csv
+# Add new row with Country Name and ISO code:
+New Country Name,XX
+
+# The system automatically loads and sorts countries
+# South Africa remains prioritized at the top
 ```
 
 ---
@@ -463,16 +566,25 @@ UI Widgets    ns_key/inst_key           Error Messages         PDF + Email
 
 ### **Entity Details**
 - **Entity Name**: Required for all entities
-- **Registration Number**: 3-50 characters when provided
-- **Country of Registration**: Required when Registration Number provided
-- **Source of Funds**: Required multiselect
-- **Industry**: Required selection
-- **Trust Masters Office**: Required for Trust entities, max 200 characters
+- **Registration Number**: 3-50 characters when provided (alphanumeric)
+- **Country of Registration**: Required when Registration Number provided (220+ options)
+- **Source of Funds**: Required multiselect (26 options from controlled list)
+- **Industry**: Required selection (75+ options from controlled list)
+- **Trust Masters Office**: Required for Trust entities only, max 200 characters (free text)
 
-### **Address Validation**
+### **🆕 Authorised Representative Validation**
+- **Required**: Title, First Name, Last Name, Gender, DOB, Marital Status, ID Type, Email, Citizenship, Country of Residence
+- **ID Type Validation**: SA ID (13 digits, Luhn check), Foreign ID (required number), Foreign Passport (number + country + future expiry)
+- **Age Validation**: Must be 18+ years old at time of submission
+- **Email Validation**: Proper email format validation
+- **Phone Validation**: Uses PhoneComponent rules (SA: 9 digits no leading 0, International: 6-15 digits)
+- **Address Validation**: Uses AddressComponent rules with 220+ country support
+
+### **Address Validation** 
 - **Required**: Street Number, Street Name, Suburb, City
-- **South Africa**: Province required, 4-digit postal code
-- **International**: Flexible postal code (≤10 characters)
+- **🇿🇦 South Africa**: Province dropdown required (9 options), 4-digit postal code
+- **🌍 International**: Free-text province/state/region, flexible postal code (≤10 characters)
+- **🆕 Country Selection**: 220+ countries with South Africa prioritized
 
 ### **Phone Validation**
 - **Required**: Dialing code and number
@@ -492,9 +604,11 @@ UI Widgets    ns_key/inst_key           Error Messages         PDF + Email
 
 ### **Session State Management**
 - **Namespace Isolation**: Each entity type maintains separate state
-- **Instance Scoping**: Multiple component instances don't interfere
+- **Instance Scoping**: Multiple component instances don't interfere  
 - **Persistence**: State survives page navigation
 - **Memory Efficiency**: Only active namespace data loaded
+- **🆕 Automatic Cleanup**: Legacy session values automatically removed to prevent errors
+- **🛡️ Error Prevention**: Proactive cleanup of problematic values (e.g., "Other" in province fields)
 
 ### **Performance Considerations**
 - **Lazy Loading**: Components loaded on demand
@@ -518,7 +632,7 @@ UI Widgets    ns_key/inst_key           Error Messages         PDF + Email
 
 ## 📧 **Email & PDF Integration**
 
-### **Email Configuration**
+### **🆕 Enhanced Email System**
 Configure SMTP settings in `.streamlit/secrets.toml`:
 ```toml
 [email_credentials]
@@ -527,10 +641,17 @@ app_password = "your-smtp-app-password"
 recipient_address = "submissions@your-domain.com"
 ```
 
+**Email Improvements:**
+- **📧 Context-Aware Subject**: "New Entity Onboarding Submission: {EntityName} ({EntityType})"
+- **📋 Comprehensive Body**: Entity details, submission summary, included documents list
+- **🏢 Professional Signature**: "Entity Onboarding System" and "Satrix Asset Management"
+- **🔧 Better Error Handling**: Specific troubleshooting guidance for failures
+- **✅ Enhanced Success Messages**: Show recipient, PDF filename, and attachment count
+
 ### **PDF Generation**
 - **Library**: ReportLab
-- **Content**: Complete form responses + metadata
-- **File Naming**: `Entity_Onboarding_{EntityName}_{Timestamp}.pdf`
+- **Content**: Complete form responses + metadata + authorised representative details
+- **🆕 File Naming**: `Entity_Onboarding_{EntityName}_{Timestamp}.pdf`
 - **Attachments**: All uploaded documents included in email
 
 ---
@@ -565,9 +686,20 @@ if st.button("Clear Session"):
 
 **Validation Errors**
 - Review field requirements in form specifications
-- Check controlled list options are current
+- Check controlled list options are current (26 Source of Funds, 75+ Industries, etc.)
 - Verify component configuration parameters
 - Test with minimal valid data first
+- **🆕 Country/Province Issues**: Clear session state if "Other is not in iterable" errors occur
+
+**🆕 Session State Issues**
+```python
+# Clear problematic session state manually if needed
+if st.button("Clear Session"):
+    for key in list(st.session_state.keys()):
+        if "__province" in key and st.session_state[key] == "Other":
+            del st.session_state[key]
+    st.rerun()
+```
 
 ### **Debug Mode**
 ```python
@@ -618,6 +750,10 @@ export STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 - [ ] **Multi-language Support**: Internationalization framework
 - [ ] **Advanced Validation**: Integration with external validation services
 - [ ] **Workflow Management**: Approval processes and status tracking
+- [ ] **🆕 Enhanced Document Management**: Document categorization, version control
+- [ ] **🆕 Real-time Collaboration**: Multiple users editing same entity
+- [ ] **🆕 Advanced Country Support**: Currency, timezone, and regulatory data
+- [ ] **🆕 Mobile Optimization**: Enhanced mobile experience for form completion
 
 ### **Scalability Considerations**
 - **Microservices**: Split into smaller, focused services

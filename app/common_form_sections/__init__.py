@@ -16,3 +16,4 @@ def get_component(name: str) -> SectionComponent | None:
 from . import natural_persons  # noqa: F401  (triggers self-registration)
 from . import address         # noqa: F401
 from . import phone          # noqa: F401
+from . import authorised_representative  # noqa: F401

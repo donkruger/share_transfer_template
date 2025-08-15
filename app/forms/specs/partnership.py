@@ -10,6 +10,14 @@ SPEC = FormSpec(
             fields=create_entity_details_fields("Entity Name (Partnership Name)")
         ),
         Section(
+            title="Authorised Representative",
+            component_id="authorised_representative",
+            component_args={
+                "instance_id": "auth_rep",
+                "title": "Authorised Representative"
+            }
+        ),
+        Section(
             title="Physical Address",
             component_id="address",
             component_args={

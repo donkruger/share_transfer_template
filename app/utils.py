@@ -39,6 +39,14 @@ def inst_key(ns: str, instance_id: str, key: str) -> str:
     """Namespace a key for a specific component instance (e.g., 'directors')."""
     return ns_key(ns, f"{instance_id}__{key}")
 
+def _cleanup_legacy_values():
+    """Clean up any legacy session state values that might cause errors."""
+    # Clean up any province values that might be set to "Other" which is no longer valid
+    keys_to_check = [k for k in st.session_state.keys() if k.endswith("__province")]
+    for key in keys_to_check:
+        if st.session_state.get(key) == "Other":
+            st.session_state[key] = ""
+
 def initialize_state():
     """Initializes all required session state variables using setdefault."""
     if 'state_initialized' not in st.session_state:
@@ -74,8 +82,11 @@ def initialize_state():
         # Use setdefault to initialize keys without overwriting existing ones
         for key, value in defaults.items():
             st.session_state.setdefault(key, value)
-            
+        
         st.session_state.state_initialized = True
+    
+    # Always run cleanup to handle legacy values
+    _cleanup_legacy_values()
 
 def persist_widget(widget_func, label: str, state_key: str, **kwargs):
     """A generic helper to make any widget's state survive page switches."""

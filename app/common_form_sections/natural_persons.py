@@ -10,9 +10,7 @@ from app.utils import (
     persist_number_input, persist_text_input, persist_selectbox,
     persist_date_input, persist_file_uploader
 )
-from app.controlled_lists import get_member_role_select
-
-COUNTRIES = ["", "South Africa", "United Kingdom", "United States"]
+from app.controlled_lists import get_member_role_select, get_countries
 
 def _digits_only(s: str) -> str:
     return re.sub(r"\D", "", s or "")
@@ -81,7 +79,7 @@ class NaturalPersonsComponent(SectionComponent):
                     persist_text_input("Passport Number", inst_key(ns, instance_id, f"passport_no_{i}"))
                     persist_selectbox("Passport Issue Country",
                         inst_key(ns, instance_id, f"passport_country_{i}"),
-                        options=COUNTRIES)
+                        options=get_countries())
                     persist_date_input("Passport Expiry (YYYY/MM/DD)",
                         inst_key(ns, instance_id, f"passport_expiry_{i}"),
                         min_value=datetime.date.today() + datetime.timedelta(days=1))

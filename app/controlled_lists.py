@@ -4,15 +4,20 @@ Controlled Lists for Entity Onboarding System
 This module contains all predefined/controlled lists used throughout the application.
 These lists can be easily managed and expanded as requirements change.
 
-Sections:
+As per functional specification section 4:
 - 4.1 Source of Funds Options
 - 4.2 Industry Options  
 - 4.3 Member Role Options
+- 4.4 Title Options
+- 4.5 Marital Status Options
+- 4.6 Gender Options
+- 4.6 Entity Type Options
 """
 
-# 4.1 Source of Funds Options
+# ===== 4.1 SOURCE OF FUNDS OPTIONS =====
+
 SOURCE_OF_FUNDS_OPTIONS = [
-    "",  # Empty option for unselected state
+    "",  # Empty option for multiselect
     "Business Operating Income",
     "Commission",
     "Company Profits",
@@ -42,9 +47,19 @@ SOURCE_OF_FUNDS_OPTIONS = [
     "Trust Income"
 ]
 
-# 4.2 Industry Options
+def get_source_of_funds_options():
+    """Get the list of Source of Funds options."""
+    return SOURCE_OF_FUNDS_OPTIONS.copy()
+
+def get_source_of_funds_multiselect():
+    """Get Source of Funds options for multiselect widgets (excludes empty option)."""
+    return [opt for opt in SOURCE_OF_FUNDS_OPTIONS if opt != ""]
+
+
+# ===== 4.2 INDUSTRY OPTIONS =====
+
 INDUSTRY_OPTIONS = [
-    "",  # Empty option for unselected state
+    "",  # Empty option for selectbox
     "Accounting Services",
     "Administrative and Support Services",
     "Adult Entertainment",
@@ -74,22 +89,51 @@ INDUSTRY_OPTIONS = [
     "Gambling",
     "Government Services, Arms and State Owned Enterprises",
     "Healthcare and Medical",
-    "Human Health and Social Work Activities",
-    "Information and Communication",
+    "High Transaction Volume Import/Export Companies",
+    "High Value Goods Dealers (Including Motor Vehicle Dealers, Art Dealers, Luxury Goods/Services Etc)",
+    "Household Goods & Home Construction Materials",
+    "Industrial Engineering",
+    "Industrial Metals",
+    "Information Technology, Communication And Telecoms",
+    "Legal Practitioner",
     "Manufacturing",
-    "Mining and Quarrying",
-    "Other Service Activities",
-    "Professional, Scientific and Technical Activities",
-    "Public Administration and Defence; Compulsory Social Security",
-    "Real Estate Activities",
-    "Transportation and Storage",
-    "Water Supply; Sewerage, Waste Management and Remediation Activities",
-    "Wholesale and Retail Trade; Repair of Motor Vehicles and Motorcycles"
+    "Minor/Scholar",
+    "Media",
+    "Money Transfer / Service Businesses",
+    "Motor Wholesale, Retail Trade And Repair",
+    "Non Equity Investment Instruments",
+    "Non Profit Organisation / Regulated Charity",
+    "Non-Government Organisation (NGO)",
+    "Oil & Gas Producers / Suppliers",
+    "Pawn Brokers/Second Hand Dealers",
+    "Pharmaceuticals & Biotechnology",
+    "Precious Metals And Stone Dealers",
+    "Professional Sport",
+    "Public Finance Management Act Schedule",
+    "Real Estate And Property Services",
+    "Retired",
+    "Scrap Metal Industry",
+    "Shell Banking",
+    "Tobacco",
+    "Transport, Storage, Courier And Freight",
+    "Travel, Tourism, Accommodation And Food Services",
+    "Unemployed",
+    "Virtual Currencies"
 ]
 
-# 4.3 Member Role Options
+def get_industry_options():
+    """Get the list of Industry options.""" 
+    return INDUSTRY_OPTIONS.copy()
+
+def get_industry_select():
+    """Get Industry options for select widgets (includes empty option)."""
+    return INDUSTRY_OPTIONS.copy()
+
+
+# ===== 4.3 MEMBER ROLE OPTIONS =====
+
 MEMBER_ROLE_OPTIONS = [
-    "",  # Empty option for unselected state
+    "",  # Empty option for selectbox
     "Chairperson",
     "Deputy Chairperson",
     "Secretary",
@@ -103,29 +147,67 @@ MEMBER_ROLE_OPTIONS = [
     "Other (specify)"
 ]
 
-# Country options for registration and other purposes
-COUNTRIES = [
+def get_member_role_options():
+    """Get the list of Member Role options."""
+    return MEMBER_ROLE_OPTIONS.copy()
+
+def get_member_role_select():
+    """Get Member Role options for select widgets (includes empty option)."""
+    return MEMBER_ROLE_OPTIONS.copy()
+
+
+# ===== 4.4 TITLE OPTIONS =====
+
+TITLE_OPTIONS = [
     "",
-    "South Africa",
-    "United Kingdom", 
-    "United States",
-    "Australia",
-    "Canada",
-    "Germany",
-    "France",
-    "Netherlands",
-    "Switzerland",
-    "Other"
+    "Mr",
+    "Mrs",
+    "Ms", 
+    "Dr",
+    "Prof",
+    "Adv"
 ]
 
-# Entity types for the onboarding system (alphabetical order with "Other" last)
+def get_title_options():
+    """Returns list of title options for Authorised Representative."""
+    return TITLE_OPTIONS.copy()
+
+
+# ===== 4.5 MARITAL STATUS OPTIONS =====
+
+MARITAL_STATUS_OPTIONS = [
+    "",
+    "Single",
+    "Married"
+]
+
+def get_marital_status_options():
+    """Returns list of marital status options for Authorised Representative."""
+    return MARITAL_STATUS_OPTIONS.copy()
+
+
+# ===== 4.6 GENDER OPTIONS =====
+
+GENDER_OPTIONS = [
+    "",
+    "Male",
+    "Female"
+]
+
+def get_gender_options():
+    """Returns list of gender options for Authorised Representative."""
+    return GENDER_OPTIONS.copy()
+
+
+# ===== 4.6 ENTITY TYPE OPTIONS =====
+
 ENTITY_TYPES = [
     "Burial Society",
     "Charity Organisation", 
     "Church",
     "Closed Corporation",
-    "Community Group",
     "Company",
+    "Community Group",
     "Cultural Association",
     "Environmental Group",
     "Investment Club",
@@ -136,38 +218,69 @@ ENTITY_TYPES = [
     "Sports Club",
     "Stokvel",
     "Trust",
-    "Other"
+    "Other"  # Always last
 ]
-
-def get_source_of_funds_options():
-    """Get the list of Source of Funds options."""
-    return SOURCE_OF_FUNDS_OPTIONS.copy()
-
-def get_industry_options():
-    """Get the list of Industry options.""" 
-    return INDUSTRY_OPTIONS.copy()
-
-def get_member_role_options():
-    """Get the list of Member Role options."""
-    return MEMBER_ROLE_OPTIONS.copy()
-
-def get_countries():
-    """Get the list of Country options."""
-    return COUNTRIES.copy()
 
 def get_entity_types():
     """Get the list of Entity Type options."""
     return ENTITY_TYPES.copy()
 
-# For backwards compatibility, export the multiselect-ready versions (without empty option)
-def get_source_of_funds_multiselect():
-    """Get Source of Funds options for multiselect widgets (excludes empty option)."""
-    return [opt for opt in SOURCE_OF_FUNDS_OPTIONS if opt != ""]
 
-def get_industry_select():
-    """Get Industry options for select widgets (includes empty option)."""
-    return INDUSTRY_OPTIONS.copy()
+# ===== COUNTRIES =====
 
-def get_member_role_select():
-    """Get Member Role options for select widgets (includes empty option)."""
-    return MEMBER_ROLE_OPTIONS.copy()
+def _load_countries_from_csv():
+    """Load countries from CSV file and return sorted list with South Africa first."""
+    import csv
+    from pathlib import Path
+    
+    try:
+        # Path to the CSV file
+        csv_path = Path(__file__).parent / "common_form_sections" / "CountryList.csv"
+        
+        countries = [""]  # Empty option first
+        
+        with open(csv_path, 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            country_names = []
+            
+            for row in reader:
+                country_name = row.get('Country Name', '').strip()
+                if country_name and country_name != '':  # Skip empty rows
+                    country_names.append(country_name)
+            
+            # Sort alphabetically but put South Africa first (after empty option)
+            country_names.sort()
+            
+            # Ensure South Africa is at the top of the list (after empty option)
+            if "South Africa" in country_names:
+                country_names.remove("South Africa")
+                countries.append("South Africa")
+            
+            # Add all other countries
+            countries.extend(country_names)
+            
+        return countries
+        
+    except Exception as e:
+        # Fallback to basic country list if CSV loading fails
+        print(f"Warning: Could not load countries from CSV: {e}")
+        return [
+            "",
+            "South Africa",
+            "United Kingdom", 
+            "United States",
+            "Australia",
+            "Canada",
+            "Germany",
+            "France",
+            "Netherlands",
+            "Switzerland",
+            "Other"
+        ]
+
+# Load countries once at module level
+COUNTRIES = _load_countries_from_csv()
+
+def get_countries():
+    """Get the comprehensive list of Country options with South Africa prioritized."""
+    return COUNTRIES.copy()
