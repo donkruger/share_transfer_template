@@ -96,7 +96,8 @@ class AuthorisedRepresentativeComponent(SectionComponent):
             persist_date_input("Date of Birth", 
                 inst_key(ns, instance_id, "date_of_birth"),
                 help="Format: YYYY/MM/DD",
-                max_value=datetime.date.today() - datetime.timedelta(days=365*16))  # Minimum 16 years old
+                min_value=datetime.date(1900, 1, 1),  # Reasonable minimum birth year
+                max_value=datetime.date.today() - datetime.timedelta(days=365*18))  # Minimum 18 years old
         
         # Identification Section
         st.markdown("**Identification**")
@@ -209,8 +210,8 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         date_of_birth = st.session_state.get(inst_key(ns, instance_id, "date_of_birth"))
         if not date_of_birth:
             errs.append(f"{prefix} Date of Birth is required.")
-        elif date_of_birth >= datetime.date.today() - datetime.timedelta(days=365*16):
-            errs.append(f"{prefix} Date of Birth indicates person must be at least 16 years old.")
+        elif date_of_birth >= datetime.date.today() - datetime.timedelta(days=365*18):
+            errs.append(f"{prefix} Date of Birth indicates person must be at least 18 years old.")
             
         if not (st.session_state.get(inst_key(ns, instance_id, "marital_status")) or "").strip():
             errs.append(f"{prefix} Marital Status is required.")
