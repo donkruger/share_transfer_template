@@ -1,6 +1,17 @@
 # Entity Onboarding System - Technical Architecture Documentation
 
-This document serves as the **comprehensive technical architecture documentation** for the Entity Onboarding System. The system has been fully implemented using a **component-based architecture** that provides maximum modularity, reusability, and maintainability.
+This document serves as the **comprehensive technical architecture documentation** for the Entity Onboarding System. The system has been fully implemented using a **semantic specification-driven architecture** that provides maximum modularity, reusability, and maintainability.
+
+## 🚀 **Latest Architecture Enhancements (Semantic Specification Compliance)**
+
+The system has been enhanced to align with semantic specification requirements:
+
+- **📋 Structured Controlled Lists**: Code/label separation with JSON-based specifications
+- **👥 Role-Based Architecture**: Proper role system for Natural Persons and Entity Fields  
+- **🔧 Field Specifications**: Comprehensive validation rules with cross-field dependencies
+- **📄 Document Requirements**: Structured document upload requirements by entity type and role
+- **⚡ Enhanced Validation Engine**: Multi-layer validation with business rule enforcement
+- **🎯 Dynamic Form Generation**: Forms built from declarative specifications
 
 ## 🏗️ **Architecture Overview**
 
@@ -24,52 +35,244 @@ EasyETFs_Data_App copy 3/
 │   ├── pages.toml                 # ✅ 3 pages configured
 │   └── secrets.toml               # Email/submission configuration
 ├── app/
+│   ├── data/                      # 🆕 STRUCTURED DATA & SPECIFICATIONS
+│   │   ├── __init__.py
+│   │   ├── controlled_lists.json      # Structured controlled lists with codes/labels
+│   │   ├── field_specifications.json  # Field validation rules and UI metadata
+│   │   ├── role_specifications.json   # Role definitions and field mappings
+│   │   ├── entity_role_rules.json     # Entity type to role requirements mapping
+│   │   └── document_requirements.json # Document upload requirements
+│   ├── controlled_lists_enhanced.py   # 🆕 Enhanced controlled lists manager
+│   ├── field_specifications.py        # 🆕 Field specification and validation system
+│   ├── document_requirements.py       # 🆕 Document requirements manager
+│   ├── controlled_lists.py            # 🔄 Legacy controlled lists (for compatibility)
+│   ├── csv_generator.py               # 🆕 CSV data export and flattening utilities
 │   ├── common_form_sections/      # 🆕 REUSABLE COMPONENTS
 │   │   ├── __init__.py            # Component registry system
 │   │   ├── base.py                # SectionComponent interface
 │   │   ├── natural_persons.py     # Person collection component
 │   │   ├── address.py             # Address with country validation
-│   │   └── phone.py               # Phone with dialing code validation
+│   │   ├── phone.py               # Phone with dialing code validation
+│   │   ├── authorised_representative.py # Individual person component
+│   │   └── CountryList.csv        # Comprehensive country database
 │   ├── forms/                     # 🆕 FORM ENGINE & SPECS
 │   │   ├── __init__.py
 │   │   ├── engine.py              # render_form/serialize/validate
+│   │   ├── field_helpers.py       # Field generation utilities
 │   │   └── specs/                 # Entity-specific form definitions
 │   │       ├── __init__.py        # SPECS registry
 │   │       ├── company.py         # Company form specification
 │   │       ├── trust.py           # Trust form specification
 │   │       ├── partnership.py     # Partnership form specification
 │   │       ├── closed_corporation.py # CC form specification
-│   │       └── other.py           # Other entity form specification
+│   │       └── [15+ entity specs] # All 17 entity types
 │   ├── components/                # 🔄 EXISTING COMPONENTS
 │   │   ├── sidebar.py             # Updated: 3-page navigation
 │   │   └── submission.py          # Submission handling
 │   ├── pages/                     # 🔄 PAGE STRUCTURE
-│   │   ├── 1_AI_Assistance.py     # AI assistant (unchanged)
+│   │   ├── 1_AI_Assistance.py     # AI assistant with enhancements
 │   │   ├── 3_Declaration_and_Submit.py # Final submission page
 │   │   └── _archive/              # 📦 ARCHIVED: Original pages 2-7
-│   │       ├── 2_Business_Information.py
-│   │       ├── 3_Authorised_Persons.py
-│   │       ├── 4_Financial_Matters.py
-│   │       ├── 5_Director_Information.py
-│   │       ├── 6_Beneficial_Owners.py
-│   │       └── 7_Strategic_Considerations.py
 │   ├── main.py                    # 🔄 Introduction: Dynamic entity forms
-│   ├── utils.py                   # 🔄 Enhanced: namespace + instance utilities
+│   ├── utils.py                   # 🔄 Enhanced: namespace + instance utilities + cleanup
 │   ├── email_sender.py            # Email submission
 │   ├── pdf_generator.py           # PDF generation
 │   └── styling.py                 # UI styling
+├── docs/                          # 🆕 DOCUMENTATION
+│   └── architecture_diagram.md    # Mermaid diagrams and architecture overview
 ├── assets/                        # Static assets
 │   └── logos/
+│       ├── favicon.svg            # Application favicon
+│       ├── profile.svg            # User avatar
+│       └── lottie-jsons/          # Animation files
 └── requirements.txt               # Dependencies
 ```
 
 ### 🎯 **Key Architectural Principles**
 
-1. **Component Reusability**: Form sections (address, phone, natural persons) are implemented once and reused across all entity types
-2. **Instance Isolation**: Multiple instances of the same component can exist on one page without state collisions using `instance_id` scoping
-3. **Namespace Separation**: Each entity type maintains isolated session state, allowing users to switch between entity types without data loss
-4. **Declarative Configuration**: Entity forms are defined declaratively in specs, mixing simple fields with reusable components
-5. **Consistent Interface**: All components implement the same interface (render/validate/serialize) ensuring predictable behavior
+1. **📋 Semantic Specification Compliance**: Follows structured data contracts for maintainability and governance
+2. **🔧 Component Reusability**: Form sections (address, phone, natural persons) are implemented once and reused across all entity types
+3. **🔒 Instance Isolation**: Multiple instances of the same component can exist on one page without state collisions using `instance_id` scoping
+4. **📦 Namespace Separation**: Each entity type maintains isolated session state, allowing users to switch between entity types without data loss
+5. **⚙️ Declarative Configuration**: Entity forms are defined declaratively in JSON specs, mixing simple fields with reusable components
+6. **🎯 Consistent Interface**: All components implement the same interface (render/validate/serialize) ensuring predictable behavior
+7. **🔄 Code/Label Separation**: UI displays human-readable labels while system stores structured codes for data integrity
+8. **👥 Role-Based Architecture**: Natural persons and entity fields are organized by roles with proper validation rules
+9. **📄 Document Governance**: Upload requirements defined by entity type and role with validation
+
+---
+
+## 🆕 **Enhanced Data Management Architecture**
+
+### **🔧 Latest Architectural Improvements**
+
+**✅ DRY Principle Compliance - Address Duplication Resolved**
+
+The `AuthorisedRepresentativeComponent` has been refactored to eliminate code duplication and maintain architectural consistency:
+
+- **❌ Before**: Address fields were duplicated in both `AuthorisedRepresentativeComponent` and `AddressComponent`
+- **✅ After**: Address handling is exclusively managed by the dedicated `AddressComponent`
+- **📋 Form Specs Updated**: All entity types now use separate address sections for authorised representatives
+- **🎯 Single Responsibility**: `AuthorisedRepresentativeComponent` focuses solely on personal details, identification, and contact info
+- **🔧 Maintainable**: Address validation rules and logic exist in only one place
+- **🏗️ Consistent**: All address capture uses the same component with the same validation rules
+
+**Implementation Pattern:**
+```python
+# Authorised Representative personal details
+Section(title="Authorised Representative", component_id="authorised_representative", ...)
+
+# Separate address section using dedicated component
+Section(title="Authorised Representative Address", component_id="address", 
+        component_args={"instance_id": "auth_rep_address"})
+
+# Entity address (also separate)
+Section(title="Entity Physical Address", component_id="address",
+        component_args={"instance_id": "physical_address"})
+```
+
+**✅ CSV Data Export Enhancement**
+
+The submission system now includes machine-readable CSV data export alongside the existing PDF summary:
+
+- **📊 Dual Format Output**: Both human-readable PDF and machine-readable CSV formats
+- **🏗️ Structured Data**: CSV uses "long format" with Section/Record#/Field/Value columns
+- **🔧 Isolated Logic**: New `csv_generator.py` module with dedicated data flattening
+- **📧 Email Integration**: CSV automatically attached to submission emails
+- **⚡ Low Risk**: Minimal changes to existing stable codebase
+- **🎯 Flexible Format**: Handles nested data, collections, and varying record counts
+
+**CSV Output Format:**
+```csv
+Section,Record #,Field,Value
+Entity Details,1,Entity Name,Acme Corp Ltd
+Directors,1,Full Name,John Smith
+Directors,1,SA ID,1234567890123
+Directors,2,Full Name,Jane Doe
+Directors,2,Foreign ID,ABC123456
+```
+
+### **Structured Data Sources**
+
+The system now uses JSON-based structured data following semantic specification requirements and has been **fully integrated** into all form journeys:
+
+#### **1. Controlled Lists (`app/data/controlled_lists.json`)**
+```json
+{
+  "source_of_funds": [
+    {"code": "BUSINESS_OPERATING_INCOME", "label": "Business Operating Income", "is_active": true, "sort_order": 1},
+    {"code": "COMMISSION", "label": "Commission", "is_active": true, "sort_order": 2}
+  ],
+  "entity_types": [
+    {"code": "COMPANY", "label": "Company", "is_active": true, "sort_order": 5}
+  ]
+}
+```
+
+#### **2. Field Specifications (`app/data/field_specifications.json`)**
+```json
+{
+  "standard_field_formatting_rules": {
+    "entity_name": {
+      "data_type": "string",
+      "required_rule": "always", 
+      "ui_control": "input",
+      "min_length": 1,
+      "max_length": 200
+    },
+    "sa_id_number": {
+      "data_type": "id_sa",
+      "required_rule": "if_id_type_sa_id",
+      "validation": "luhn_check",
+      "dependencies": {"id_type": "SA ID Number"}
+    }
+  }
+}
+```
+
+#### **3. Role Specifications (`app/data/role_specifications.json`)**
+```json
+{
+  "natural_person_roles": {
+    "AUTHORISED_REPRESENTATIVE": {
+      "role_id": "AUTHORISED_REPRESENTATIVE",
+      "name": "Authorised Representative",
+      "fields": [
+        {"field_name": "title", "required_rule": "always"},
+        {"field_name": "first_name", "required_rule": "always"}
+      ]
+    }
+  }
+}
+```
+
+#### **4. Entity Role Rules (`app/data/entity_role_rules.json`)**
+```json
+{
+  "entity_role_rules": [
+    {
+      "entity_type": "COMPANY",
+      "required_roles": [
+        {"role_id": "AUTHORISED_REPRESENTATIVE", "requirement": "REQUIRED", "min_count": 1, "max_count": 1},
+        {"role_id": "DIRECTOR", "requirement": "REQUIRED", "min_count": 1, "max_count": null}
+      ]
+    }
+  ]
+}
+```
+
+#### **5. Document Requirements (`app/data/document_requirements.json`)**
+```json
+{
+  "document_requirements": [
+    {
+      "entity_type": "COMPANY",
+      "document_code": "CERTIFICATE_OF_INCORPORATION",
+      "description": "Certificate of Incorporation",
+      "required_rule": "REQUIRED",
+      "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+      "max_size_mb": 10
+    }
+  ]
+}
+```
+
+### **Enhanced Managers**
+
+#### **Controlled List Manager** ✅ **FULLY INTEGRATED**
+- **Code/Label Resolution**: Maps between codes (stored) and labels (displayed)
+- **Active Item Filtering**: Enables/disables options dynamically
+- **Sort Ordering**: Custom ordering with configurable priority (e.g., South Africa first)
+- **Form Integration**: Now powering all dropdown fields across entity forms
+
+#### **Field Specification Manager** 
+- **Multi-layer Validation**: Data type, format, length, range, special validation
+- **Dependency Resolution**: Cross-field validation rules
+- **Business Rule Enforcement**: Entity-specific conditional logic
+
+#### **Document Requirements Manager**
+- **Role-based Requirements**: Documents required per entity type and role
+- **Upload Validation**: File format, size, and completeness checking
+- **Schema Generation**: Dynamic UI generation from requirements
+
+### **🎯 Controlled Lists Integration Status**
+
+The enhanced controlled lists system has been **fully integrated** across all form components:
+
+**Form Components:**
+- ✅ **Entity Type Selection** (`app/main.py`): Uses `get_entity_types()` for dynamic entity selection
+- ✅ **Field Helpers** (`app/forms/field_helpers.py`): Integrated Source of Funds, Industry, and Country dropdowns
+- ✅ **Natural Persons Component** (`app/common_form_sections/natural_persons.py`): Member roles and countries
+- ✅ **Authorised Representative Component** (`app/common_form_sections/authorised_representative.py`): Titles, genders, marital status, countries
+- ✅ **Address Component** (`app/common_form_sections/address.py`): Country selection with 220+ countries
+- ✅ **Session State Management** (`app/utils.py`): Backwards compatibility maintained
+
+**Data Flow:**
+```
+JSON Data Sources → Enhanced Managers → Form Components → Dynamic UI → User Experience
+```
+
+All form dropdowns now use standardized controlled lists with consistent code/label separation, ensuring data integrity while providing user-friendly interfaces.
 
 ---
 

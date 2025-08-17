@@ -12,8 +12,16 @@ def register_component(name: str, component: SectionComponent):
 def get_component(name: str) -> SectionComponent | None:
     return _REGISTRY.get(name)
 
-# Import modules that self-register here (add more as you create them)
-from . import natural_persons  # noqa: F401  (triggers self-registration)
-from . import address         # noqa: F401
-from . import phone          # noqa: F401
-from . import authorised_representative  # noqa: F401
+# Import component modules
+from . import natural_persons
+from . import address
+from . import phone
+from . import authorised_representative
+from . import juristic_entities
+
+# Register all components (done after imports to avoid circular dependencies)
+register_component("natural_persons", natural_persons.NaturalPersonsComponent())
+register_component("address", address.AddressComponent())
+register_component("phone", phone.PhoneComponent())
+register_component("authorised_representative", authorised_representative.AuthorisedRepresentativeComponent())
+register_component("juristic_entities", juristic_entities.JuristicEntitiesComponent())

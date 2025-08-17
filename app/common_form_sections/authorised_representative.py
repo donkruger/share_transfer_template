@@ -7,12 +7,11 @@ from typing import Any, Dict, List, Tuple
 import streamlit as st
 
 from app.common_form_sections.base import SectionComponent
-from app.common_form_sections import register_component
 from app.utils import inst_key
 from app.utils import (
     persist_text_input, persist_selectbox, persist_date_input
 )
-from app.controlled_lists import (
+from app.controlled_lists_enhanced import (
     get_title_options, get_gender_options, get_marital_status_options, get_countries
 )
 
@@ -75,19 +74,19 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         
         with col1:
             persist_selectbox("Title", 
-                inst_key(ns, instance_id, "title"), 
-                options=get_title_options())
+                inst_key(ns, instance_id, "title"),
+                options=get_title_options(include_empty=True, return_codes=False))
             
             persist_text_input("First Name", 
                 inst_key(ns, instance_id, "first_name"))
                 
             persist_selectbox("Gender", 
-                inst_key(ns, instance_id, "gender"), 
-                options=get_gender_options())
+                inst_key(ns, instance_id, "gender"),
+                options=get_gender_options(include_empty=True, return_codes=False))
                 
             persist_selectbox("Marital Status", 
                 inst_key(ns, instance_id, "marital_status"), 
-                options=get_marital_status_options())
+                options=get_marital_status_options(include_empty=True, return_codes=False))
         
         with col2:
             persist_text_input("Last Name", 
@@ -124,7 +123,7 @@ class AuthorisedRepresentativeComponent(SectionComponent):
             with col2:
                 persist_selectbox("Passport Issue Country",
                     inst_key(ns, instance_id, "passport_country"),
-                    options=get_countries())
+                    options=get_countries(include_empty=True, return_codes=False))
                     
             persist_date_input("Passport Expiry Date",
                 inst_key(ns, instance_id, "passport_expiry"),
@@ -141,8 +140,8 @@ class AuthorisedRepresentativeComponent(SectionComponent):
                 help="Valid email format required")
                 
             persist_selectbox("Citizenship", 
-                inst_key(ns, instance_id, "citizenship"), 
-                options=get_countries())
+                inst_key(ns, instance_id, "citizenship"),
+                options=get_countries(include_empty=True, return_codes=False))
         
         with col2:
             persist_text_input("Cell Phone Number", 
@@ -150,45 +149,10 @@ class AuthorisedRepresentativeComponent(SectionComponent):
                 help="Include country code (e.g., +27)")
                 
             persist_selectbox("Country of Residence", 
-                inst_key(ns, instance_id, "country_of_residence"), 
-                options=get_countries())
+                inst_key(ns, instance_id, "country_of_residence"),
+                options=get_countries(include_empty=True, return_codes=False))
         
-        # Address Section
-        st.markdown("**Address**")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            persist_text_input("Unit Number", 
-                inst_key(ns, instance_id, "unit_number"),
-                help="Optional")
-            persist_text_input("Street Number", 
-                inst_key(ns, instance_id, "street_number"))
-                
-        with col2:
-            persist_text_input("Complex Name", 
-                inst_key(ns, instance_id, "complex_name"),
-                help="Optional")
-            persist_text_input("Street Name", 
-                inst_key(ns, instance_id, "street_name"))
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            persist_text_input("Suburb", 
-                inst_key(ns, instance_id, "suburb"))
-            persist_text_input("Code", 
-                inst_key(ns, instance_id, "postal_code"))
-                
-        with col2:
-            persist_text_input("City", 
-                inst_key(ns, instance_id, "city"))
-            persist_selectbox("Province", 
-                inst_key(ns, instance_id, "province"), 
-                options=["", "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", 
-                        "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape"])
-        
-        persist_selectbox("Country", 
-            inst_key(ns, instance_id, "address_country"), 
-            options=get_countries())
+
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
         errs: List[str] = []
@@ -255,24 +219,6 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         if not cell_phone.strip():
             errs.append(f"{prefix} Cell Phone Number is required.")
         
-        # Address validation
-        if not (st.session_state.get(inst_key(ns, instance_id, "street_number")) or "").strip():
-            errs.append(f"{prefix} Street Number is required.")
-            
-        if not (st.session_state.get(inst_key(ns, instance_id, "street_name")) or "").strip():
-            errs.append(f"{prefix} Street Name is required.")
-            
-        if not (st.session_state.get(inst_key(ns, instance_id, "suburb")) or "").strip():
-            errs.append(f"{prefix} Suburb is required.")
-            
-        if not (st.session_state.get(inst_key(ns, instance_id, "city")) or "").strip():
-            errs.append(f"{prefix} City is required.")
-            
-        if not (st.session_state.get(inst_key(ns, instance_id, "postal_code")) or "").strip():
-            errs.append(f"{prefix} Code is required.")
-            
-        if not (st.session_state.get(inst_key(ns, instance_id, "address_country")) or "").strip():
-            errs.append(f"{prefix} Country is required.")
         
         return errs
 
@@ -297,16 +243,6 @@ class AuthorisedRepresentativeComponent(SectionComponent):
             "Citizenship": st.session_state.get(inst_key(ns, instance_id, "citizenship"), ""),
             "Country of Residence": st.session_state.get(inst_key(ns, instance_id, "country_of_residence"), ""),
             "Cell Phone": st.session_state.get(inst_key(ns, instance_id, "cell_phone"), ""),
-            
-            "Unit Number": st.session_state.get(inst_key(ns, instance_id, "unit_number"), ""),
-            "Complex Name": st.session_state.get(inst_key(ns, instance_id, "complex_name"), ""),
-            "Street Number": st.session_state.get(inst_key(ns, instance_id, "street_number"), ""),
-            "Street Name": st.session_state.get(inst_key(ns, instance_id, "street_name"), ""),
-            "Suburb": st.session_state.get(inst_key(ns, instance_id, "suburb"), ""),
-            "City": st.session_state.get(inst_key(ns, instance_id, "city"), ""),
-            "Code": st.session_state.get(inst_key(ns, instance_id, "postal_code"), ""),
-            "Province": st.session_state.get(inst_key(ns, instance_id, "province"), ""),
-            "Country": st.session_state.get(inst_key(ns, instance_id, "address_country"), ""),
         }
         
         # Format date of birth if present
@@ -325,4 +261,4 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         return data, uploads
 
 # Register the component
-register_component("authorised_representative", AuthorisedRepresentativeComponent())
+# Component will be registered in __init__.py to avoid circular imports

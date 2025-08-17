@@ -33,8 +33,18 @@ SPEC = FormSpec(
                 "title": "Contact Number"
             }
         ),
-        Section(title="Members", component_id="natural_persons", component_args={
-            "instance_id": "members", "role_label": "Member", "min_count": 1
-        }),
+        # Required Roles per Entity Roles Rules Specification - Closed Corporations
+        Section(
+            title="CC Members",
+            component_id="natural_persons",
+            component_args={
+                "instance_id": "members",
+                "title": "CC Members (Natural Persons Only)",
+                "role_label": "Member",
+                "min_count": 1,           # At least one Member required
+                "show_uploads": True,
+                "help_text": "All CC Members must be natural persons. Member Interest Percentage and Executive Control are required."
+            }
+        ),
     ]
 )

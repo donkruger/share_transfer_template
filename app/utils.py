@@ -7,8 +7,8 @@ from typing import List
 import streamlit as st
 import datetime
 
-# Import controlled lists from centralized module
-from app.controlled_lists import (
+# Import controlled lists from enhanced centralized module
+from app.controlled_lists_enhanced import (
     get_entity_types,
     get_source_of_funds_options,
     get_industry_options,
@@ -17,11 +17,11 @@ from app.controlled_lists import (
 )
 
 # Export for backwards compatibility
-ENTITY_TYPES = get_entity_types()
-SOURCE_OF_FUNDS_OPTIONS = get_source_of_funds_options()
-INDUSTRY_OPTIONS = get_industry_options()
-COUNTRIES = get_countries()
-MEMBER_ROLE_OPTIONS = get_member_role_options()
+ENTITY_TYPES = get_entity_types(include_empty=False, return_codes=False)
+SOURCE_OF_FUNDS_OPTIONS = get_source_of_funds_options(include_empty=False, return_codes=False)
+INDUSTRY_OPTIONS = get_industry_options(include_empty=False, return_codes=False)
+COUNTRIES = get_countries(include_empty=False, return_codes=False)
+MEMBER_ROLE_OPTIONS = get_member_role_options(include_empty=False, return_codes=False)
 
 def sanitize_ns(label: str) -> str:
     """Sanitize a label to create a valid namespace identifier."""

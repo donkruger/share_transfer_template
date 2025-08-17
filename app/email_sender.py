@@ -40,8 +40,10 @@ def send_submission_email(
         body += f"• Entity Name: {entity_name}\n"
         body += f"• Entity Type: {entity_type}\n"
         body += f"• Entity User ID: {entity_user_id}\n\n"
-        body += f"Please find the complete Entity Onboarding PDF summary and all supporting documents attached.\n\n"
+        body += f"Please find the complete Entity Onboarding PDF summary, machine-readable CSV data file, and all supporting documents attached.\n\n"
         body += f"This submission includes:\n"
+        body += f"• PDF Summary: Human-readable formatted summary of all form data\n"
+        body += f"• CSV Data File: Machine-readable structured data for processing systems\n"
         body += f"• Entity details and registration information\n"
         body += f"• Physical address details\n"
         body += f"• Contact information\n"
@@ -60,23 +62,34 @@ def send_submission_email(
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain"))
 
-        # --- Attach PDF Summary (already generated) ---
-        from app.pdf_generator import make_pdf
-        pdf_bytes = make_pdf(answers)
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(pdf_bytes)
-        encoders.encode_base64(part)
-        
-        # Create a safe filename using entity name and current timestamp
+        # --- Create standardized filenames ---
         safe_entity_name = entity_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
         timestamp = __import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"Entity_Onboarding_{safe_entity_name}_{timestamp}.pdf"
-        
-        part.add_header(
+        base_filename = f"Entity_Onboarding_{safe_entity_name}_{timestamp}"
+
+        # --- Attach PDF Summary ---
+        from app.pdf_generator import make_pdf
+        pdf_bytes = make_pdf(answers)
+        pdf_part = MIMEBase("application", "octet-stream")
+        pdf_part.set_payload(pdf_bytes)
+        encoders.encode_base64(pdf_part)
+        pdf_part.add_header(
             "Content-Disposition",
-            f"attachment; filename={filename}",
+            f"attachment; filename={base_filename}.pdf",
         )
-        msg.attach(part)
+        msg.attach(pdf_part)
+
+        # --- NEW: Attach CSV Data File ---
+        from app.csv_generator import make_csv
+        csv_string = make_csv(answers)
+        csv_part = MIMEBase("application", "octet-stream")
+        csv_part.set_payload(csv_string.encode("utf-8"))  # Encode the string to bytes
+        encoders.encode_base64(csv_part)
+        csv_part.add_header(
+            "Content-Disposition",
+            f"attachment; filename={base_filename}.csv",
+        )
+        msg.attach(csv_part)
 
         # --- Attach User Uploaded Files ---
         valid_uploads = [f for f in uploaded_files if f is not None]
@@ -100,9 +113,10 @@ def send_submission_email(
         
         st.success(f"✅ Entity Onboarding submission sent successfully!")
         st.info(f"📧 Email sent to: {recipient_email}")
-        st.info(f"📎 PDF filename: {filename}")
+        st.info(f"📎 PDF Summary: {base_filename}.pdf")
+        st.info(f"📊 CSV Data File: {base_filename}.csv")
         if valid_uploads:
-            st.info(f"📎 {len(valid_uploads)} supporting document(s) attached")
+            st.info(f"📎 Supporting Documents: {len(valid_uploads)} file(s) attached")
 
     except Exception as e:
         st.error(f"❌ Failed to send Entity Onboarding submission email: {e}")

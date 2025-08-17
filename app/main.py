@@ -14,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Import all modular components
 from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS
 from app.components.sidebar import render_sidebar
-from app.utils import initialize_state, persist_selectbox, persist_text_input, current_namespace, ns_key, ENTITY_TYPES
+from app.utils import initialize_state, persist_selectbox, persist_text_input, current_namespace, ns_key
+from app.controlled_lists_enhanced import get_entity_types
 from app.forms.engine import render_form
 from app.forms.specs import SPECS
 
@@ -44,11 +45,11 @@ def main():
     # ──────────────────────────────────────────────────────────────────────────
     render_sidebar()
 
-    st.markdown('<h1 class="gradient-title">Entity Onboarding | Re-FICA</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="gradient-title">Juristics ReFICA</h1>', unsafe_allow_html=True)
     st.caption("Select an entity type. All information is captured on this page with built-in validation.")
 
     # Entity selector
-    persist_selectbox("Entity Type", "entity_type", options=ENTITY_TYPES)
+    persist_selectbox("Entity Type", "entity_type", options=get_entity_types(include_empty=False, return_codes=False))
     ns = current_namespace()
 
     # EntityUserID immediately after entity type

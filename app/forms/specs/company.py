@@ -18,11 +18,19 @@ SPEC = FormSpec(
             }
         ),
         Section(
-            title="Physical Address",
+            title="Authorised Representative Address",
+            component_id="address",
+            component_args={
+                "instance_id": "auth_rep_address",
+                "title": "Authorised Representative Address"
+            }
+        ),
+        Section(
+            title="Entity Physical Address",
             component_id="address",
             component_args={
                 "instance_id": "physical_address",
-                "title": "Physical Address"
+                "title": "Entity Physical Address"
             }
         ),
         Section(
@@ -33,28 +41,42 @@ SPEC = FormSpec(
                 "title": "Contact Number"
             }
         ),
+        # Required Roles per Entity Roles Rules Specification - Companies
         Section(
-            title="Directors",
+            title="Company Directors",
             component_id="natural_persons",
             component_args={
                 "instance_id": "directors",
-                "title": "Directors",
+                "title": "Company Directors (Natural Persons Only)",
                 "role_label": "Director",
-                "min_count": 1,           # require at least one
+                "min_count": 1,           # At least one Director required
                 "show_uploads": True,
-                # "allowed_id_types": ["SA ID Number", "Foreign Passport Number"]  # optional override
+                "help_text": "All Company Directors must be natural persons. Executive Control field is required."
             }
         ),
-        # You can mount it again for UBOs, with different rules:
+        
+        # Additional Roles - Shareholders (Natural Person or Juristic Entity)
         Section(
-            title="Beneficial Owners (>5%)",
+            title="Shareholders (Natural Persons)",
             component_id="natural_persons",
             component_args={
-                "instance_id": "ubos",
-                "title": "Beneficial Owners (>5%)",
-                "role_label": "Owner",
+                "instance_id": "shareholders_natural",
+                "title": "Natural Person Shareholders",
+                "role_label": "Shareholder",
                 "min_count": 0,
-                "show_uploads": True
+                "show_uploads": True,
+                "help_text": "Natural person shareholders with percentage shareholding capture."
+            }
+        ),
+        Section(
+            title="Shareholders (Juristic Entities)",
+            component_id="juristic_entities",
+            component_args={
+                "instance_id": "shareholders_juristic", 
+                "title": "Juristic Entity Shareholders",
+                "role_label": "Shareholder",
+                "min_count": 0,
+                "help_text": "Juristic entity shareholders with percentage shareholding capture."
             }
         ),
     ]

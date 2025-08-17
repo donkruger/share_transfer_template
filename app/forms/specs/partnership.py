@@ -18,11 +18,19 @@ SPEC = FormSpec(
             }
         ),
         Section(
-            title="Physical Address",
+            title="Authorised Representative Address",
+            component_id="address",
+            component_args={
+                "instance_id": "auth_rep_address",
+                "title": "Authorised Representative Address"
+            }
+        ),
+        Section(
+            title="Partnership Physical Address",
             component_id="address",
             component_args={
                 "instance_id": "physical_address",
-                "title": "Physical Address"
+                "title": "Partnership Physical Address"
             }
         ),
         Section(
@@ -33,8 +41,29 @@ SPEC = FormSpec(
                 "title": "Contact Number"
             }
         ),
-        Section(title="Partners", component_id="natural_persons", component_args={
-            "instance_id": "partners", "role_label": "Partner", "min_count": 2
-        }),
+        # Required Roles per Entity Roles Rules Specification - Partnerships
+        Section(
+            title="Partners (Natural Persons)",
+            component_id="natural_persons",
+            component_args={
+                "instance_id": "partners_natural",
+                "title": "Natural Person Partners",
+                "role_label": "Partner",
+                "min_count": 1,           # At least one Partner required (can be natural or juristic)
+                "show_uploads": True,
+                "help_text": "Natural person partners with Partner Interest and Executive Control capture."
+            }
+        ),
+        Section(
+            title="Partners (Juristic Entities)",
+            component_id="juristic_entities",
+            component_args={
+                "instance_id": "partners_juristic", 
+                "title": "Juristic Entity Partners",
+                "role_label": "Partner",
+                "min_count": 0,
+                "help_text": "Juristic entity partners with Partner Interest and Executive Control capture."
+            }
+        ),
     ]
 )

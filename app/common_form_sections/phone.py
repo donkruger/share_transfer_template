@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Tuple
 import streamlit as st
 
 from app.common_form_sections.base import SectionComponent
-from app.common_form_sections import register_component
 from app.utils import inst_key
 from app.utils import persist_text_input
 
@@ -52,4 +51,4 @@ class PhoneComponent(SectionComponent):
         return payload, []
 
 # Register
-register_component("phone", PhoneComponent())
+# Component will be registered in __init__.py to avoid circular imports

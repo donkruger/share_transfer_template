@@ -1,0 +1,278 @@
+{
+    "standard_field_formatting_rules": {
+        "entity_name": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 200,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "ABC Holdings (Pty) Ltd"
+        },
+        "trading_name": {
+            "data_type": "string",
+            "max_length": 200,
+            "required_rule": "optional",
+            "ui_control": "input",
+            "example": "ABC Trading"
+        },
+        "registration_number": {
+            "data_type": "string",
+            "format_regex": "^[A-Za-z0-9]{3,50}$",
+            "min_length": 3,
+            "max_length": 50,
+            "required_rule": "if_formally_registered",
+            "ui_control": "input",
+            "example": "2019/123456/07"
+        },
+        "country_of_registration": {
+            "data_type": "string",
+            "required_rule": "if_registration_number_provided",
+            "ui_control": "select",
+            "controlled_list": "countries",
+            "dependencies": {
+                "registration_number": "not_empty"
+            }
+        },
+        "date_of_registration": {
+            "data_type": "date",
+            "required_rule": "optional",
+            "ui_control": "datepicker",
+            "max_value": "today"
+        },
+        "source_of_funds": {
+            "data_type": "array",
+            "required_rule": "always",
+            "ui_control": "multiselect",
+            "controlled_list": "source_of_funds"
+        },
+        "industry": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "industry"
+        },
+        "masters_office": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 200,
+            "required_rule": "if_entity_type_trust",
+            "ui_control": "input",
+            "dependencies": {
+                "entity_type": "TRUST"
+            },
+            "example": "Cape Town"
+        },
+        "first_name": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 100,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "John"
+        },
+        "last_name": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 100,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "Smith"
+        },
+        "title": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "titles"
+        },
+        "gender": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "gender"
+        },
+        "date_of_birth": {
+            "data_type": "date",
+            "required_rule": "always",
+            "ui_control": "datepicker",
+            "min_value": "1900-01-01",
+            "max_value": "today-18years",
+            "validation_message": "Person must be at least 18 years old"
+        },
+        "marital_status": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "marital_status"
+        },
+        "id_type": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "options": [
+                "SA ID Number",
+                "Foreign ID Number",
+                "Foreign Passport Number"
+            ]
+        },
+        "sa_id_number": {
+            "data_type": "id_sa",
+            "format_regex": "^[0-9]{13}$",
+            "required_rule": "if_id_type_sa_id",
+            "ui_control": "input",
+            "validation": "luhn_check",
+            "dependencies": {
+                "id_type": "SA ID Number"
+            },
+            "example": "9001015009087"
+        },
+        "foreign_id_number": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 50,
+            "required_rule": "if_id_type_foreign_id",
+            "ui_control": "input",
+            "dependencies": {
+                "id_type": "Foreign ID Number"
+            },
+            "example": "A123456789"
+        },
+        "passport_number": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 50,
+            "required_rule": "if_id_type_passport",
+            "ui_control": "input",
+            "dependencies": {
+                "id_type": "Foreign Passport Number"
+            },
+            "example": "N123456789"
+        },
+        "passport_country": {
+            "data_type": "string",
+            "required_rule": "if_id_type_passport",
+            "ui_control": "select",
+            "controlled_list": "countries",
+            "dependencies": {
+                "id_type": "Foreign Passport Number"
+            }
+        },
+        "passport_expiry": {
+            "data_type": "date",
+            "required_rule": "if_id_type_passport",
+            "ui_control": "datepicker",
+            "min_value": "today+1day",
+            "dependencies": {
+                "id_type": "Foreign Passport Number"
+            },
+            "validation_message": "Passport expiry must be a future date"
+        },
+        "email": {
+            "data_type": "email",
+            "required_rule": "always",
+            "ui_control": "input",
+            "format_regex": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+            "example": "john.smith@example.com"
+        },
+        "citizenship": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "countries"
+        },
+        "country_of_residence": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "countries"
+        },
+        "phone_dialing_code": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "example": "+27"
+        },
+        "phone_number": {
+            "data_type": "phone",
+            "required_rule": "always",
+            "ui_control": "input",
+            "validation": "phone_format",
+            "dependencies": {
+                "phone_dialing_code": "validate_against_country"
+            },
+            "example": "821234567"
+        },
+        "street_number": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 20,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "123"
+        },
+        "unit_number": {
+            "data_type": "string",
+            "max_length": 20,
+            "required_rule": "optional",
+            "ui_control": "input",
+            "example": "Unit 5"
+        },
+        "complex_name": {
+            "data_type": "string",
+            "max_length": 100,
+            "required_rule": "optional",
+            "ui_control": "input",
+            "example": "Sunset Gardens"
+        },
+        "street_name": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 100,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "Main Street"
+        },
+        "suburb": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 100,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "Sandton"
+        },
+        "city": {
+            "data_type": "string",
+            "min_length": 1,
+            "max_length": 100,
+            "required_rule": "always",
+            "ui_control": "input",
+            "example": "Johannesburg"
+        },
+        "province": {
+            "data_type": "string",
+            "required_rule": "if_country_south_africa",
+            "ui_control": "select_or_input",
+            "dependencies": {
+                "country": "ZA"
+            },
+            "controlled_list_if_sa": "sa_provinces",
+            "example": "Gauteng"
+        },
+        "postal_code": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "input",
+            "validation": "postal_code_format",
+            "dependencies": {
+                "country": "validate_format"
+            },
+            "example": "2196"
+        },
+        "country": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "countries",
+            "default": "South Africa"
+        }
+    }
+}

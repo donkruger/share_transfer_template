@@ -1,16 +1,24 @@
 # Entity Onboarding System
 
-A comprehensive **Streamlit-based entity onboarding application** that supports 17 different entity types with dynamic form generation, reusable components, and intelligent validation. Built using a **component-based architecture** for maximum modularity and maintainability.
+A comprehensive **Streamlit-based entity onboarding application** that supports 17 different entity types with dynamic form generation, reusable components, and intelligent validation. Built using a **semantic specification-driven architecture** for maximum modularity, maintainability, and governance.
 
-## 🆕 **Latest Updates**
+## 🚀 **Latest Architecture Enhancements (Semantic Specification Compliance)**
 
+- **📋 Structured Controlled Lists**: Code/label separation with JSON-based specifications for data integrity
+- **👥 Role-Based Architecture**: Proper role system for Natural Persons and Entity Fields with validation rules
+- **🔧 Field Specifications**: Comprehensive validation rules with cross-field dependencies and business logic
+- **📄 Document Requirements**: Structured document upload requirements by entity type and role
+- **⚡ Enhanced Validation Engine**: Multi-layer validation with dependency checking and special validations
+- **🎯 Dynamic Form Generation**: Forms built from declarative JSON specifications
+- **🔄 Data Governance**: Versioned specifications with audit trail and change management
 - **🌍 Comprehensive Country Support**: Full integration with 220+ countries from CSV data source
 - **👤 Authorised Representative**: Complete individual capture for all entity types
 - **🎨 Enhanced UI**: Gradient text styling, Lottie animations, custom avatars
 - **📧 Improved Email System**: Context-aware submissions with proper Entity Onboarding branding
 - **🔧 Robust Session Management**: Automatic cleanup of legacy data, improved state isolation
-- **📋 Refined Controlled Lists**: Exact specifications for all dropdown options
 - **🖼️ Consistent Branding**: Unified favicon and visual identity across all pages
+- **✅ DRY Principle Compliance**: Eliminated address duplication in AuthorisedRepresentativeComponent
+- **📊 CSV Data Export**: Machine-readable structured data alongside PDF summaries
 
 ## 🚀 **Quick Start**
 
@@ -77,11 +85,21 @@ EasyETFs_Data_App/
 │
 ├── app/                          # Main application code
 │   ├── main.py                   # 🏠 Introduction page - Entity selection & form rendering
-│   ├── controlled_lists.py       # 📋 Centralized predefined options/lists (220+ countries, industries, etc.)
+│   ├── data/                     # 🆕 STRUCTURED DATA & SPECIFICATIONS  
+│   │   ├── controlled_lists.json      # Structured controlled lists with codes/labels
+│   │   ├── field_specifications.json  # Field validation rules and UI metadata
+│   │   ├── role_specifications.json   # Role definitions and field mappings
+│   │   ├── entity_role_rules.json     # Entity type to role requirements mapping
+│   │   └── document_requirements.json # Document upload requirements
+│   ├── controlled_lists_enhanced.py   # 🆕 Enhanced controlled lists manager
+│   ├── field_specifications.py        # 🆕 Field specification and validation system
+│   ├── document_requirements.py       # 🆕 Document requirements manager
+│   ├── controlled_lists.py       # 📋 Legacy controlled lists (for compatibility)
 │   ├── utils.py                  # 🔧 Utilities, state management, persistence helpers, session cleanup
 │   ├── styling.py                # 🎨 CSS styling definitions (gradient text, animations)
 │   ├── email_sender.py           # 📧 Entity Onboarding email submission functionality
 │   ├── pdf_generator.py          # 📄 PDF generation utilities
+│   ├── csv_generator.py          # 📊 CSV data export and flattening utilities
 │   │
 │   ├── pages/                    # Application pages
 │   │   ├── 1_AI_Assistance.py    # 🤖 AI-powered help system
@@ -130,11 +148,115 @@ EasyETFs_Data_App/
 │       ├── profile.svg           # 👤 User avatar for chat interface
 │       └── lottie-jsons/         # 🎬 Animation files for AI Assistance page
 │
+├── docs/                         # 🆕 Documentation
+│   └── architecture_diagram.md   # Mermaid diagrams and architecture overview
+│
 ├── knowledge_set.md              # AI assistant knowledge base
 ├── project_details.md            # Detailed technical architecture documentation
 ├── requirements.txt              # Python dependencies
 └── README.md                     # This file
 ```
+
+---
+
+## 🆕 **Semantic Specification Architecture**
+
+### **📋 Structured Data Management**
+
+The system now implements a **semantic specification-driven architecture** with structured JSON data sources:
+
+#### **1. Controlled Lists with Code/Label Separation**
+```json
+{
+  "source_of_funds": [
+    {"code": "BUSINESS_OPERATING_INCOME", "label": "Business Operating Income", "is_active": true, "sort_order": 1},
+    {"code": "COMMISSION", "label": "Commission", "is_active": true, "sort_order": 2}
+  ]
+}
+```
+- **UI displays labels** (user-friendly)
+- **System stores codes** (data integrity)
+- **Version control ready** (structured data)
+
+#### **2. Field Specifications with Validation Rules**
+```json
+{
+  "entity_name": {
+    "data_type": "string",
+    "required_rule": "always",
+    "ui_control": "input",
+    "min_length": 1,
+    "max_length": 200
+  },
+  "sa_id_number": {
+    "data_type": "id_sa",
+    "required_rule": "if_id_type_sa_id",
+    "validation": "luhn_check",
+    "dependencies": {"id_type": "SA ID Number"}
+  }
+}
+```
+
+#### **3. Role-Based System**
+- **Natural Person Roles**: AUTHORISED_REPRESENTATIVE, DIRECTOR, TRUSTEE, PARTNER, etc.
+- **Role-Specific Fields**: Each role has defined field requirements
+- **Entity Role Rules**: Which roles are required/conditional per entity type
+
+#### **4. Document Requirements**
+- **Entity-Level Documents**: Certificate of Incorporation, Trust Deed, etc.
+- **Role-Level Documents**: ID documents, proof of address per role
+- **Upload Validation**: File format, size, and completeness checking
+
+### **🔧 Enhanced Managers**
+
+#### **Controlled List Manager** ✅ **FULLY INTEGRATED**
+- Code/label resolution with fallback handling
+- Active item filtering for enable/disable functionality
+- Custom sort ordering (e.g., South Africa prioritized)
+- **Form integration**: Powers all dropdown fields across entity forms
+
+#### **Field Specification Manager**
+- Multi-layer validation (type, format, length, range)
+- Cross-field dependency validation
+- Special validations (Luhn check, phone format, email)
+- Business rule enforcement (entity-specific logic)
+
+#### **Document Requirements Manager**
+- Role-based document requirements
+- Upload schema generation for dynamic UI
+- File validation (format, size, completeness)
+
+### **📊 Data Flow Architecture**
+
+The new architecture follows a clear data flow pattern:
+
+1. **📋 JSON Specifications** → **🔧 Enhanced Managers** → **🎯 Dynamic Form Generation** → **⚡ Multi-layer Validation** → **📤 Structured Submission**
+
+**Benefits:**
+- **🔄 Maintainable**: JSON-driven configuration
+- **📋 Auditable**: Versioned specifications
+- **🎯 Scalable**: Role-based architecture
+- **🔧 Flexible**: Dynamic form generation
+- **🛡️ Robust**: Multi-layer validation
+
+### **🎯 Integration Achievements**
+
+The enhanced controlled lists system is **fully operational** across all form journeys:
+
+| Component | Integration Status | Enhanced Features |
+|-----------|-------------------|-------------------|
+| **Entity Selection** | ✅ Complete | Dynamic entity types from JSON |
+| **Field Helpers** | ✅ Complete | Source of Funds, Industry, Countries |
+| **Natural Persons** | ✅ Complete | Member roles, ID countries |
+| **Authorised Rep** | ✅ Complete | Titles, genders, marital status, citizenship |
+| **Address Forms** | ✅ Complete | 220+ countries with SA prioritization |
+| **Session State** | ✅ Complete | Backwards compatibility maintained |
+
+**Key Improvements:**
+- 🎯 **Data Consistency**: All dropdowns use standardized code/label pairs
+- 🌍 **Global Ready**: 220+ countries with intelligent sorting
+- 🔧 **Maintainable**: JSON-driven configuration eliminates hardcoded lists
+- 📊 **Scalable**: Easy addition of new options without code changes
 
 ---
 
@@ -237,11 +359,11 @@ class FormSpec:
 
 ### **3. Reusable Components** (`app/common_form_sections/`)
 
-#### **🆕 Authorised Representative Component**
+#### **🆕 Authorised Representative Component** ✅ **REFACTORED - DRY COMPLIANT**
 **NEW**: Captures individual person details (not collections) for the entity representative:
 
 ```python
-# Usage in form specs
+# Usage in form specs - Personal details only
 Section(
     title="Authorised Representative", 
     component_id="authorised_representative",
@@ -250,15 +372,26 @@ Section(
         "title": "Authorised Representative"
     }
 )
+
+# Separate address section using dedicated AddressComponent
+Section(
+    title="Authorised Representative Address",
+    component_id="address",
+    component_args={
+        "instance_id": "auth_rep_address",
+        "title": "Authorised Representative Address"
+    }
+)
 ```
 
 **Features:**
+- **✅ DRY Principle**: No longer duplicates address fields - uses dedicated AddressComponent
 - Personal details with controlled lists (Title, Gender, Marital Status)
 - Multiple ID types with validation (SA ID with Luhn, Foreign ID, Foreign Passport)
-- Address integration (reuses AddressComponent)
-- Phone integration (reuses PhoneComponent) 
+- **🔧 Single Responsibility**: Focuses solely on personal details, identification, and contact info
 - Email validation and citizenship/residence country selection
 - Age validation (must be 18+) and comprehensive error handling
+- **🏗️ Architectural Consistency**: Maintains clean separation of concerns
 
 #### **Natural Persons Component**
 Handles collections of people with comprehensive validation:
@@ -535,9 +668,9 @@ UI Widgets    ns_key/inst_key           Error Messages         PDF + Email
 
 1. **Validation**: All fields and components validated
 2. **Serialization**: Data structured for export
-3. **PDF Generation**: Summary document created
-4. **Email Submission**: PDF + attachments sent
-5. **User Download**: PDF available for download
+3. **Dual Format Generation**: Both PDF summary and CSV data file created
+4. **Email Submission**: PDF + CSV + user attachments sent automatically
+5. **User Feedback**: Success confirmation with all attachment details
 
 ### **Key Data Structures**
 
@@ -632,7 +765,7 @@ UI Widgets    ns_key/inst_key           Error Messages         PDF + Email
 
 ## 📧 **Email & PDF Integration**
 
-### **🆕 Enhanced Email System**
+### **🆕 Enhanced Email System with Dual Format Export**
 Configure SMTP settings in `.streamlit/secrets.toml`:
 ```toml
 [email_credentials]
@@ -644,15 +777,43 @@ recipient_address = "submissions@your-domain.com"
 **Email Improvements:**
 - **📧 Context-Aware Subject**: "New Entity Onboarding Submission: {EntityName} ({EntityType})"
 - **📋 Comprehensive Body**: Entity details, submission summary, included documents list
+- **📊 Dual Format Attachments**: Both PDF summary and CSV data file automatically included
 - **🏢 Professional Signature**: "Entity Onboarding System" and "Satrix Asset Management"
 - **🔧 Better Error Handling**: Specific troubleshooting guidance for failures
-- **✅ Enhanced Success Messages**: Show recipient, PDF filename, and attachment count
+- **✅ Enhanced Success Messages**: Show recipient, PDF filename, CSV filename, and attachment count
 
-### **PDF Generation**
+### **Dual Format Output**
+
+#### **PDF Generation**
 - **Library**: ReportLab
+- **Purpose**: Human-readable formatted summary
 - **Content**: Complete form responses + metadata + authorised representative details
 - **🆕 File Naming**: `Entity_Onboarding_{EntityName}_{Timestamp}.pdf`
-- **Attachments**: All uploaded documents included in email
+
+#### **🆕 CSV Data Export**
+- **Library**: Python CSV module
+- **Purpose**: Machine-readable structured data for processing systems
+- **Format**: Long format with Section/Record#/Field/Value columns
+- **Content**: All form data flattened into structured rows
+- **🆕 File Naming**: `Entity_Onboarding_{EntityName}_{Timestamp}.csv`
+
+**CSV Format Example:**
+```csv
+Section,Record #,Field,Value
+Entity Details,1,Entity Name,Acme Corp Ltd
+Entity Details,1,Registration Number,REG123456
+Directors,1,Full Name,John Smith
+Directors,1,SA ID,1234567890123
+Directors,2,Full Name,Jane Doe
+Directors,2,Foreign ID,ABC123456
+```
+
+**Benefits:**
+- **🤖 Automation-Ready**: CSV format perfect for automated processing systems
+- **📊 Data Analysis**: Easy import into spreadsheets, databases, and analytics tools
+- **🔧 Integration-Friendly**: Standard format for third-party system integration
+- **📋 Audit Trail**: Complete structured record of all submitted data
+- **🏗️ Low Risk**: Isolated CSV logic doesn't affect existing PDF generation
 
 ---
 
@@ -754,6 +915,8 @@ export STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 - [ ] **🆕 Real-time Collaboration**: Multiple users editing same entity
 - [ ] **🆕 Advanced Country Support**: Currency, timezone, and regulatory data
 - [ ] **🆕 Mobile Optimization**: Enhanced mobile experience for form completion
+- [ ] **📊 CSV Data Enhancements**: Custom column mappings, multiple export formats
+- [ ] **🔌 API Data Export**: REST endpoints for automated data retrieval
 
 ### **Scalability Considerations**
 - **Microservices**: Split into smaller, focused services

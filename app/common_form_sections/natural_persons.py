@@ -4,13 +4,12 @@ from typing import Any, Dict, List, Tuple
 import streamlit as st
 
 from app.common_form_sections.base import SectionComponent
-from app.common_form_sections import register_component
 from app.utils import inst_key
 from app.utils import (
     persist_number_input, persist_text_input, persist_selectbox,
     persist_date_input, persist_file_uploader
 )
-from app.controlled_lists import get_member_role_select, get_countries
+from app.controlled_lists_enhanced import get_member_role_options, get_countries
 
 def _digits_only(s: str) -> str:
     return re.sub(r"\D", "", s or "")
@@ -58,13 +57,38 @@ class NaturalPersonsComponent(SectionComponent):
 
         for i in range(st.session_state.get(count_key, 0)):
             with st.expander(f"{role_label} #{i+1}", expanded=False):
-                persist_text_input("Full Name & Surname", inst_key(ns, instance_id, f"full_{i}"))
+                
+                # Entity Roles - Natural Persons Field Spec implementation
+                col1, col2 = st.columns(2)
+                with col1:
+                    # 1. FirstName (Required)
+                    persist_text_input("First Name", inst_key(ns, instance_id, f"first_name_{i}"))
+                    
+                    # 4. Date of Birth (Required)
+                    persist_date_input("Date of Birth", 
+                        inst_key(ns, instance_id, f"date_of_birth_{i}"),
+                        help="Format: YYYY/MM/DD",
+                        max_value=datetime.date.today() - datetime.timedelta(days=1))
+                
+                with col2:
+                    # 2. Surname (Required)
+                    persist_text_input("Surname", inst_key(ns, instance_id, f"surname_{i}"))
+                    
+                    # 6. Country of Residence (Required)
+                    persist_selectbox("Country of Residence",
+                        inst_key(ns, instance_id, f"residence_country_{i}"),
+                        options=get_countries(include_empty=True, return_codes=False))
+                
+                # 3. UserID (Optional - only if person has platform account)
+                persist_text_input("User ID (if applicable)", 
+                    inst_key(ns, instance_id, f"user_id_{i}"),
+                    help="Internal platform identifier if person has an account")
                 
                 # Member role selection (if enabled)
                 if config.get("show_member_roles", False):
                     persist_selectbox("Member Role",
                         inst_key(ns, instance_id, f"member_role_{i}"),
-                        options=get_member_role_select())
+                        options=get_member_role_options(include_empty=True, return_codes=False))
 
                 id_type = persist_selectbox("Identification Type",
                     inst_key(ns, instance_id, f"id_type_{i}"),
@@ -86,12 +110,43 @@ class NaturalPersonsComponent(SectionComponent):
 
                 persist_text_input("Email", inst_key(ns, instance_id, f"email_{i}"))
                 persist_text_input("Telephone", inst_key(ns, instance_id, f"tel_{i}"))
+                
+                # Role-specific additional fields per Entity Roles Rules Specification
+                self._render_role_specific_fields(ns, instance_id, i, config)
 
                 if config.get("show_uploads", True):
                     persist_file_uploader("ID / Passport Document",
                         inst_key(ns, instance_id, f"id_doc_{i}"))
                     persist_file_uploader("Proof of Address",
                         inst_key(ns, instance_id, f"poa_doc_{i}"))
+
+    def _render_role_specific_fields(self, ns: str, instance_id: str, i: int, config: dict):
+        """Render additional fields based on the role per Entity Roles Rules Specification."""
+        role_label = config.get("role_label", "Person").lower()
+        
+        # Executive Control for Company Directors, CC Members, and Partners
+        if role_label in ["director", "member", "partner"]:
+            persist_selectbox("Executive Control",
+                inst_key(ns, instance_id, f"executive_control_{i}"),
+                options=["", "Yes", "No"],
+                help="Does this person exercise executive control?")
+        
+        # Percentage fields for different roles
+        if role_label == "member":  # CC Members
+            persist_number_input("Member Interest Percentage (%)",
+                inst_key(ns, instance_id, f"member_interest_{i}"),
+                min_value=0.0, max_value=100.0, step=0.01,
+                help="Ownership percentage in the CC (0-100%)")
+        elif role_label == "partner":  # Partnership Partners
+            persist_number_input("Partner Interest (%)",
+                inst_key(ns, instance_id, f"partner_interest_{i}"),
+                min_value=0.0, max_value=100.0, step=0.01,
+                help="Ownership percentage in the Partnership (0-100%)")
+        elif role_label in ["shareholder", "owner"]:  # Company Shareholders/Beneficial Owners
+            persist_number_input("Percentage Shareholding (%)",
+                inst_key(ns, instance_id, f"shareholding_{i}"),
+                min_value=0.0, max_value=100.0, step=0.01,
+                help="Ownership percentage in the Company (0-100%)")
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
         errs: List[str] = []
@@ -106,9 +161,23 @@ class NaturalPersonsComponent(SectionComponent):
 
         for i in range(n):
             prefix = f"[{role_label} #{i+1}]"
-            full = (st.session_state.get(inst_key(ns, instance_id, f"full_{i}")) or "").strip()
-            if not full:
-                errs.append(f"{prefix} Full Name is required.")
+            
+            # Required fields per Natural Persons Field Spec
+            first_name = st.session_state.get(inst_key(ns, instance_id, f"first_name_{i}"), "").strip()
+            surname = st.session_state.get(inst_key(ns, instance_id, f"surname_{i}"), "").strip()
+            date_of_birth = st.session_state.get(inst_key(ns, instance_id, f"date_of_birth_{i}"), None)
+            residence_country = st.session_state.get(inst_key(ns, instance_id, f"residence_country_{i}"), "").strip()
+            
+            if not first_name:
+                errs.append(f"{prefix} First Name is required.")
+            if not surname:
+                errs.append(f"{prefix} Surname is required.")
+            if not date_of_birth:
+                errs.append(f"{prefix} Date of Birth is required.")
+            elif date_of_birth >= datetime.date.today():
+                errs.append(f"{prefix} Date of Birth must be a past date.")
+            if not residence_country:
+                errs.append(f"{prefix} Country of Residence is required.")
 
             idt = st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}"), "")
             if idt not in [""] + allowed_id_types:
@@ -146,16 +215,29 @@ class NaturalPersonsComponent(SectionComponent):
 
         for i in range(n):
             exp = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"))
+            dob = st.session_state.get(inst_key(ns, instance_id, f"date_of_birth_{i}"))
+            
             person_data = {
-                "Full Name": st.session_state.get(inst_key(ns, instance_id, f"full_{i}"), ""),
+                # Natural Persons Field Spec core fields
+                "First Name": st.session_state.get(inst_key(ns, instance_id, f"first_name_{i}"), ""),
+                "Surname": st.session_state.get(inst_key(ns, instance_id, f"surname_{i}"), ""),
+                "User ID": st.session_state.get(inst_key(ns, instance_id, f"user_id_{i}"), ""),
+                "Date of Birth": dob.strftime("%Y/%m/%d") if dob else "",
+                "Country of Residence": st.session_state.get(inst_key(ns, instance_id, f"residence_country_{i}"), ""),
+                
+                # Identification fields
                 "ID Type": st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}"), ""),
                 "SA ID": st.session_state.get(inst_key(ns, instance_id, f"sa_id_{i}"), ""),
                 "Foreign ID": st.session_state.get(inst_key(ns, instance_id, f"foreign_id_{i}"), ""),
                 "Passport No": st.session_state.get(inst_key(ns, instance_id, f"passport_no_{i}"), ""),
                 "Passport Country": st.session_state.get(inst_key(ns, instance_id, f"passport_country_{i}"), ""),
                 "Passport Expiry": exp.strftime("%Y/%m/%d") if exp else "",
+                
+                # Contact fields
                 "Email": st.session_state.get(inst_key(ns, instance_id, f"email_{i}"), ""),
                 "Telephone": st.session_state.get(inst_key(ns, instance_id, f"tel_{i}"), ""),
+                
+                # Upload status
                 "ID Doc Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))),
                 "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))),
             }
@@ -163,6 +245,18 @@ class NaturalPersonsComponent(SectionComponent):
             # Add member role if enabled
             if config.get("show_member_roles", False):
                 person_data["Member Role"] = st.session_state.get(inst_key(ns, instance_id, f"member_role_{i}"), "")
+            
+            # Add role-specific fields per Entity Roles Rules Specification
+            role_label = config.get("role_label", "Person").lower()
+            if role_label in ["director", "member", "partner"]:
+                person_data["Executive Control"] = st.session_state.get(inst_key(ns, instance_id, f"executive_control_{i}"), "")
+            
+            if role_label == "member":
+                person_data["Member Interest Percentage"] = st.session_state.get(inst_key(ns, instance_id, f"member_interest_{i}"), 0.0)
+            elif role_label == "partner":
+                person_data["Partner Interest"] = st.session_state.get(inst_key(ns, instance_id, f"partner_interest_{i}"), 0.0)
+            elif role_label in ["shareholder", "owner"]:
+                person_data["Percentage Shareholding"] = st.session_state.get(inst_key(ns, instance_id, f"shareholding_{i}"), 0.0)
             
             people.append(person_data)
             if config.get("show_uploads", True):
@@ -174,5 +268,4 @@ class NaturalPersonsComponent(SectionComponent):
         payload = {"Count": n, "Records": people}
         return payload, uploads
 
-# Register
-register_component("natural_persons", NaturalPersonsComponent())
+# Component will be registered in __init__.py to avoid circular imports

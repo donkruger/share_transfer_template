@@ -5,9 +5,9 @@ This module provides helper functions to generate form fields with controlled li
 """
 
 from app.forms.engine import Field
-from app.controlled_lists import (
+from app.controlled_lists_enhanced import (
     get_source_of_funds_multiselect,
-    get_industry_select,
+    get_industry_options,
     get_countries
 )
 
@@ -40,7 +40,7 @@ def create_entity_details_fields(entity_name_label: str = "Entity Name (Register
         Field("source_of_funds", "Source of Funds", "multiselect", required=True,
               options=get_source_of_funds_multiselect()),
         Field("industry", "Industry", "select", required=True,
-              options=get_industry_select())
+              options=get_industry_options(include_empty=True, return_codes=False))
     ])
     
     return fields

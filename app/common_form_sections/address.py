@@ -4,11 +4,10 @@ from typing import Any, Dict, List, Tuple
 import streamlit as st
 
 from app.common_form_sections.base import SectionComponent
-from app.common_form_sections import register_component
 from app.utils import inst_key
 from app.utils import persist_text_input, persist_selectbox
 
-from app.controlled_lists import get_countries
+from app.controlled_lists_enhanced import get_countries
 
 SA_PROVINCES = ["", "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
                 "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"]
@@ -32,7 +31,7 @@ class AddressComponent(SectionComponent):
             persist_text_input("Unit Number (optional)", inst_key(ns, instance_id, "unit_no"))
             persist_text_input("Street Number", inst_key(ns, instance_id, "street_no"))
             persist_text_input("Suburb", inst_key(ns, instance_id, "suburb"))
-            persist_selectbox("Country", inst_key(ns, instance_id, "country"), options=get_countries())
+            persist_selectbox("Country", inst_key(ns, instance_id, "country"), options=get_countries(include_empty=True, return_codes=False))
         with col2:
             persist_text_input("Complex Name (optional)", inst_key(ns, instance_id, "complex"))
             persist_text_input("Street Name", inst_key(ns, instance_id, "street_name"))
@@ -83,5 +82,4 @@ class AddressComponent(SectionComponent):
         }
         return payload, []
 
-# Register
-register_component("address", AddressComponent())
+# Component will be registered in __init__.py to avoid circular imports
