@@ -12,7 +12,8 @@ from app.utils import (
     persist_text_input, persist_selectbox, persist_date_input
 )
 from app.controlled_lists_enhanced import (
-    get_title_options, get_gender_options, get_marital_status_options, get_countries
+    get_title_options, get_gender_options, get_marital_status_options, get_countries,
+    get_dial_code_for_country_label
 )
 
 def _digits_only(s: str) -> str:
@@ -50,6 +51,16 @@ def _is_valid_email(email: str) -> bool:
     # Basic regex for email validation
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, email))
+
+def _phone_ok(dial: str, number: str) -> bool:
+    """Validate phone format by dialing code, consistent with PhoneComponent.
+    South Africa (+27): 9 digits, no leading zero. International: 6–15 digits.
+    """
+    dial = (dial or "").strip()
+    num_digits = _digits_only(number)
+    if dial == "+27":
+        return len(num_digits) == 9 and not num_digits.startswith("0")
+    return 6 <= len(num_digits) <= 15
 
 class AuthorisedRepresentativeComponent(SectionComponent):
     """
@@ -139,17 +150,49 @@ class AuthorisedRepresentativeComponent(SectionComponent):
                 inst_key(ns, instance_id, "email"),
                 help="Valid email format required")
                 
-            persist_selectbox("Citizenship", 
+            citizenship = persist_selectbox("Citizenship", 
                 inst_key(ns, instance_id, "citizenship"),
                 options=get_countries(include_empty=True, return_codes=False))
         
         with col2:
-            persist_text_input("Cell Phone Number", 
-                inst_key(ns, instance_id, "cell_phone"),
-                help="Include country code (e.g., +27)")
+            # Phone details integrated here (dialing code + number)
+            pc1, pc2 = st.columns([1,2])
+            with pc1:
+                # Auto-fill dialing code based on Citizenship if available (before creating widget)
+                phone_code_key = inst_key(ns, instance_id, "phone_code")
+                citizenship_value = st.session_state.get(inst_key(ns, instance_id, "citizenship"), "")
+                auto_code = get_dial_code_for_country_label(citizenship_value)
+                current_code = st.session_state.get(phone_code_key)
+                if auto_code and not current_code:
+                    # Set only permanent key - persist_widget will handle the temp key
+                    st.session_state[phone_code_key] = auto_code
+                persist_text_input("Dialing Code", 
+                    phone_code_key,
+                    help="Auto-filled from Citizenship; edit if needed (e.g., +27)")
+            with pc2:
+                # Prefer the widget tmp value for label logic if present
+                pc_perm_key = inst_key(ns, instance_id, "phone_code")
+                pc_tmp_key = f"_{pc_perm_key}"
+                current_dial = st.session_state.get(pc_tmp_key) or st.session_state.get(pc_perm_key)
+                phone_label = (
+                    "Phone Number (must be 9 digits, no leading 0)" if current_dial == "+27"
+                    else "Phone Number (digits only)"
+                )
+                persist_text_input(phone_label, inst_key(ns, instance_id, "phone_number"))
                 
-            persist_selectbox("Country of Residence", 
-                inst_key(ns, instance_id, "country_of_residence"),
+            # Get the current residence value first
+            residence_key = inst_key(ns, instance_id, "country_of_residence")
+            current_residence = st.session_state.get(residence_key, "")
+            
+            # If dialing code not set from Citizenship, try Country of Residence (before widget creation)
+            if not st.session_state.get(phone_code_key) and current_residence:
+                auto_code_res = get_dial_code_for_country_label(current_residence)
+                if auto_code_res:
+                    # Set only permanent key - persist_widget will handle the temp key
+                    st.session_state[phone_code_key] = auto_code_res
+            
+            residence = persist_selectbox("Country of Residence", 
+                residence_key,
                 options=get_countries(include_empty=True, return_codes=False))
         
 
@@ -215,9 +258,15 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         if not (st.session_state.get(inst_key(ns, instance_id, "country_of_residence")) or "").strip():
             errs.append(f"{prefix} Country of Residence is required.")
             
-        cell_phone = st.session_state.get(inst_key(ns, instance_id, "cell_phone"), "")
-        if not cell_phone.strip():
-            errs.append(f"{prefix} Cell Phone Number is required.")
+        # Phone validation (dial code + number)
+        dial = st.session_state.get(inst_key(ns, instance_id, "phone_code"), "")
+        num = st.session_state.get(inst_key(ns, instance_id, "phone_number"), "")
+        if not dial:
+            errs.append(f"{prefix} Dialing Code is required.")
+        if not num:
+            errs.append(f"{prefix} Phone Number is required.")
+        if dial and num and not _phone_ok(dial, num):
+            errs.append(f"{prefix} Phone Number is invalid for the specified dialing code.")
         
         
         return errs
@@ -242,7 +291,8 @@ class AuthorisedRepresentativeComponent(SectionComponent):
             "Email": st.session_state.get(inst_key(ns, instance_id, "email"), ""),
             "Citizenship": st.session_state.get(inst_key(ns, instance_id, "citizenship"), ""),
             "Country of Residence": st.session_state.get(inst_key(ns, instance_id, "country_of_residence"), ""),
-            "Cell Phone": st.session_state.get(inst_key(ns, instance_id, "cell_phone"), ""),
+            "Phone Dialing Code": st.session_state.get(inst_key(ns, instance_id, "phone_code"), ""),
+            "Phone Number": st.session_state.get(inst_key(ns, instance_id, "phone_number"), ""),
         }
         
         # Format date of birth if present

@@ -27,6 +27,6 @@ def render_sidebar():
         
         # Custom page navigation with proper labels and icons
         # Paths must be relative to the app directory
-        st.page_link('main.py', label='Introduction')
+        st.page_link('main.py', label='Capture Info')
         st.page_link('pages/1_AI_Assistance.py', label='AI Assistance', icon='🤖')
         st.page_link('pages/3_Declaration_and_Submit.py', label='Declaration & Submit') 

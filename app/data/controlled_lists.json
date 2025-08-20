@@ -655,32 +655,32 @@
     ],
     "entity_types": [
         {
+            "code": "COMPANY",
+            "label": "Company",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
             "code": "BURIAL_SOCIETY",
             "label": "Burial Society",
             "is_active": true,
-            "sort_order": 1
+            "sort_order": 2
         },
         {
             "code": "CHARITY_ORGANISATION",
             "label": "Charity Organisation",
             "is_active": true,
-            "sort_order": 2
+            "sort_order": 3
         },
         {
             "code": "CHURCH",
             "label": "Church",
             "is_active": true,
-            "sort_order": 3
+            "sort_order": 4
         },
         {
             "code": "CLOSED_CORPORATION",
             "label": "Closed Corporation",
-            "is_active": true,
-            "sort_order": 4
-        },
-        {
-            "code": "COMPANY",
-            "label": "Company",
             "is_active": true,
             "sort_order": 5
         },

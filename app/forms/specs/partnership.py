@@ -1,5 +1,5 @@
 from app.forms.engine import FormSpec, Section
-from app.forms.field_helpers import create_entity_details_fields
+from app.forms.field_helpers import create_entity_details_fields, create_entity_document_upload_fields
 
 SPEC = FormSpec(
     name="partnership",
@@ -34,13 +34,10 @@ SPEC = FormSpec(
             }
         ),
         Section(
-            title="Contact Information",
-            component_id="phone",
-            component_args={
-                "instance_id": "contact_phone",
-                "title": "Contact Number"
-            }
+            title="Entity Documents",
+            fields=create_entity_document_upload_fields("PARTNERSHIP")
         ),
+        
         # Required Roles per Entity Roles Rules Specification - Partnerships
         Section(
             title="Partners (Natural Persons)",

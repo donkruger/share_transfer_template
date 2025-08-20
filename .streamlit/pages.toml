@@ -1,6 +1,6 @@
 [[pages]]
 path = "app/main.py"
-name = "Introduction"
+name = "Capture Info"
 
 [[pages]]
 path = "app/pages/1_AI_Assistance.py"

@@ -25,6 +25,16 @@ st.markdown(GRADIENT_TITLE_CSS, unsafe_allow_html=True)
 st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
 render_sidebar()
 
+# Add logo above title - full width landscape
+logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "Ownthemarket.png"
+if logo_path.exists():
+    # Display logo across full width for landscape/wide format
+    st.image(str(logo_path), 
+            use_column_width=True,  # Spans entire page width
+            output_format="PNG")
+else:
+    st.warning("Logo not found at expected path")
+
 st.markdown('<h1 class="gradient-title">Declaration & Submit</h1>', unsafe_allow_html=True)
 
 persist_checkbox("I/we declare the information provided is true, accurate, complete, and up-to-date.", "accept")

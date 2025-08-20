@@ -13,24 +13,23 @@ h1, h2, h3, h4, h5, h6 {font-family: 'Questrial', sans-serif !important; font-we
 
 GRADIENT_TITLE_CSS = """
 <style>
-@keyframes gradient-animation {
-  0%   {background-position: 0% 50%;}
-  50%  {background-position: 100% 50%;}
-  100% {background-position: 0% 50%;}
+@keyframes color-shift {
+  0% { color: #3c66a4; }
+  50% { color: #0fbce3; }
+  100% { color: #3c66a4; }
 }
+
 .gradient-title {
-  font-family: 'Questrial', sans-serif;
-  font-size: 2.2rem;
-  font-weight: 400;
-  text-align: left;
-  background: linear-gradient(270deg, #3c66a4, #0fbce3);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-animation 7s ease-in-out infinite;
-  margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
+  font-family: 'Questrial', sans-serif !important;
+  font-size: 2.2rem !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+  color: #3c66a4 !important;
+  animation: color-shift 3s ease-in-out infinite !important;
+  display: block !important;
+  visibility: visible !important;
 }
 </style>
 """
@@ -79,6 +78,61 @@ and applies the half-second fade-in animation.
     background-color: rgba(237, 24, 71, 0.1) !important;
     border-left-color: #ed1847 !important;
     color: #991b1b !important;
+}
+
+/* Custom button styling to ensure blue theme colors */
+.stButton > button[kind="primary"] {
+    background-color: #0fbce3 !important;
+    border-color: #0fbce3 !important;
+    color: white !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background-color: #3c66a4 !important;
+    border-color: #3c66a4 !important;
+    color: white !important;
+}
+
+.stButton > button[kind="primary"]:active,
+.stButton > button[kind="primary"]:focus {
+    background-color: #2a4a75 !important;
+    border-color: #2a4a75 !important;
+    color: white !important;
+    box-shadow: 0 0 0 3px rgba(15, 188, 227, 0.25) !important;
+}
+
+/* Download button styling */
+.stDownloadButton > button {
+    background-color: #0fbce3 !important;
+    border-color: #0fbce3 !important;
+    color: white !important;
+}
+
+.stDownloadButton > button:hover {
+    background-color: #3c66a4 !important;
+    border-color: #3c66a4 !important;
+    color: white !important;
+}
+
+/* Reduce top spacing/padding on all pages */
+.main .block-container {
+    padding-top: 1rem !important;
+    max-width: 100% !important;
+}
+
+/* Reduce spacing around headers */
+.stApp > header {
+    height: 0 !important;
+}
+
+/* Minimize top margin on main content */
+.element-container:first-child {
+    margin-top: 0 !important;
+}
+
+/* Reduce margin on gradient titles */
+.gradient-title {
+    margin-top: 0 !important;
 }
 </style>
 """

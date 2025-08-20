@@ -35,8 +35,9 @@
         },
         "date_of_registration": {
             "data_type": "date",
-            "required_rule": "optional",
-            "ui_control": "datepicker",
+            "required_rule": "always",
+            "ui_control": "date",
+            "min_value": "1800-01-01",
             "max_value": "today"
         },
         "source_of_funds": {

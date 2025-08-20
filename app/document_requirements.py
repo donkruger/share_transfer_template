@@ -24,6 +24,7 @@ class DocumentRequirement:
     max_size_mb: int
     capture_phase: str
     condition: Optional[str] = None
+    group_id: Optional[str] = None  # For ANY_OF group validation
 
 
 class DocumentRequirementsManager:
@@ -126,20 +127,41 @@ class DocumentRequirementsManager:
         """
         required_docs = self.get_required_documents(entity_type, roles, context)
         errors = []
-        
+
+        # First, validate individually REQUIRED docs (excluding ANY_OF groups)
         for req in required_docs:
-            doc_key = self._get_document_key(req)
-            
-            if doc_key not in uploaded_docs or not uploaded_docs[doc_key]:
-                errors.append(f"Required document missing: {req.description}")
-            else:
-                # Validate file format and size
-                file_info = uploaded_docs[doc_key]
-                format_errors = self._validate_file_format(req, file_info)
-                size_errors = self._validate_file_size(req, file_info)
-                errors.extend(format_errors)
-                errors.extend(size_errors)
-        
+            if req.required_rule != "ANY_OF":
+                doc_key = self._get_document_key(req)
+                if doc_key not in uploaded_docs or not uploaded_docs[doc_key]:
+                    errors.append(f"Required document missing: {req.description}")
+                else:
+                    file_info = uploaded_docs[doc_key]
+                    errors.extend(self._validate_file_format(req, file_info))
+                    errors.extend(self._validate_file_size(req, file_info))
+
+        # Then, enforce ANY_OF group rules: at least one present per group_id
+        group_to_reqs: Dict[str, List[DocumentRequirement]] = {}
+        for req in self._requirements:
+            if req.required_rule == "ANY_OF" and req.group_id:
+                group_to_reqs.setdefault(req.group_id, []).append(req)
+
+        for group_id, reqs in group_to_reqs.items():
+            # Only enforce groups that apply to this entity/roles
+            applicable = [r for r in reqs if (r.entity_type in ["ALL", entity_type]) and (not r.role_id or r.role_id in roles)]
+            if not applicable:
+                continue
+            # Check if any uploaded
+            any_present = False
+            for r in applicable:
+                key = self._get_document_key(r)
+                if key in uploaded_docs and uploaded_docs[key]:
+                    any_present = True
+                    break
+            if not any_present:
+                # Use first description to compose message
+                descs = "; or ".join([r.description for r in applicable])
+                errors.append(f"At least one of the following documents is required: {descs}")
+
         return len(errors) == 0, errors
     
     def get_document_upload_schema(self, entity_type: str, roles: List[str] = None) -> Dict[str, Any]:
@@ -185,6 +207,8 @@ class DocumentRequirementsManager:
             return context.get("has_beneficial_owners", False)
         elif condition == "ownership_over_5_percent":
             return context.get("has_beneficial_owners", False)
+        elif condition == "if_related_legal_entity":
+            return context.get("has_related_legal_entity", False)
         
         return True  # Default to required if condition unknown
     

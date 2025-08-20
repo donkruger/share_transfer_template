@@ -36,12 +36,10 @@ class AddressComponent(SectionComponent):
             persist_text_input("Complex Name (optional)", inst_key(ns, instance_id, "complex"))
             persist_text_input("Street Name", inst_key(ns, instance_id, "street_name"))
             persist_text_input("City", inst_key(ns, instance_id, "city"))
-            # Province field - dropdown for SA, text input for other countries  
+            # Province field - only show for South Africa
             selected_country = st.session_state.get(inst_key(ns, instance_id, "country"), "")
             if selected_country == "South Africa":
                 persist_selectbox("Province", inst_key(ns, instance_id, "province"), options=SA_PROVINCES)
-            else:
-                persist_text_input("Province/State/Region", inst_key(ns, instance_id, "province"))
         
         # Postal Code
         pc_label = "Postal Code (must be 4 digits)" if st.session_state.get(inst_key(ns, instance_id, "country")) == "South Africa" else "Postal Code"
@@ -69,6 +67,8 @@ class AddressComponent(SectionComponent):
         return errs
 
     def serialize(self, *, ns: str, instance_id: str, **config) -> Tuple[Dict[str, Any], List[Any]]:
+        country = st.session_state.get(inst_key(ns, instance_id, "country"), "")
+        
         payload = {
             "Unit Number": st.session_state.get(inst_key(ns, instance_id, "unit_no"), ""),
             "Complex Name": st.session_state.get(inst_key(ns, instance_id, "complex"), ""),
@@ -76,10 +76,14 @@ class AddressComponent(SectionComponent):
             "Street Name": st.session_state.get(inst_key(ns, instance_id, "street_name"), ""),
             "Suburb": st.session_state.get(inst_key(ns, instance_id, "suburb"), ""),
             "City": st.session_state.get(inst_key(ns, instance_id, "city"), ""),
-            "Province": st.session_state.get(inst_key(ns, instance_id, "province"), ""),
-            "Country": st.session_state.get(inst_key(ns, instance_id, "country"), ""),
+            "Country": country,
             "Postal Code": st.session_state.get(inst_key(ns, instance_id, "code"), ""),
         }
+        
+        # Only include Province for South African addresses
+        if country == "South Africa":
+            payload["Province"] = st.session_state.get(inst_key(ns, instance_id, "province"), "")
+        
         return payload, []
 
 # Component will be registered in __init__.py to avoid circular imports

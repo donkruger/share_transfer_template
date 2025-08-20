@@ -5,6 +5,7 @@ This module provides helper functions to generate form fields with controlled li
 """
 
 from app.forms.engine import Field
+from app.document_requirements import get_document_upload_schema
 from app.controlled_lists_enhanced import (
     get_source_of_funds_multiselect,
     get_industry_options,
@@ -36,7 +37,7 @@ def create_entity_details_fields(entity_name_label: str = "Entity Name (Register
         Field("registration_number", "Registration Number", "text", required=False),
         Field("country_of_registration", "Country of Registration", "select", required=False, 
               options=get_countries()),
-        Field("date_of_registration", "Date of Registration / Establishment", "date", required=False),
+        Field("date_of_registration", "Date of Registration / Establishment", "date", required=True),
         Field("source_of_funds", "Source of Funds", "multiselect", required=True,
               options=get_source_of_funds_multiselect()),
         Field("industry", "Industry", "select", required=True,
@@ -55,3 +56,25 @@ def create_trust_specific_fields():
     return [
         Field("masters_office", "Masters Office where the Trust was registered", "text", required=True)
     ]
+
+def create_entity_document_upload_fields(entity_type_code: str):
+    """
+    Create file upload fields for entity-level document requirements based on
+    app/data/document_requirements.json for the given entity type code
+    (e.g., 'COMPANY', 'TRUST', 'PARTNERSHIP', 'CLOSED_CORPORATION').
+
+    Returns:
+        List[Field]: File fields with required flags according to the spec
+    """
+    fields = []
+    try:
+        schema = get_document_upload_schema(entity_type_code)
+        for doc in schema.get("entity_documents", []):
+            key = doc.get("document_code", "").lower()
+            label = doc.get("description", key)
+            required = bool(doc.get("required", False))
+            fields.append(Field(key, label, "file", required=required))
+    except Exception:
+        # Fail quietly; no fields if schema cannot be loaded
+        return []
+    return fields

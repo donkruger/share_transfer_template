@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, Tuple
 import streamlit as st
 from app.utils import ns_key
+from app.field_specifications import get_date_bounds
 from app.utils import (
     persist_text_input, persist_number_input, persist_text_area,
     persist_selectbox, persist_date_input, persist_checkbox, persist_file_uploader,
@@ -39,7 +40,24 @@ def _render_field(ns: str, f: Field):
     if f.kind == "textarea": return persist_text_area(f.label, k)
     if f.kind == "select":   return persist_selectbox(f.label, k, options=f.options or [])
     if f.kind == "multiselect": return persist_multiselect(f.label, k, options=f.options or [])
-    if f.kind == "date":     return persist_date_input(f.label, k)
+    if f.kind == "date":
+        min_d, max_d = get_date_bounds(f.key)
+        # Fallback for Date of Registration if specs are missing at runtime
+        if f.key == "date_of_registration":
+            try:
+                import datetime as _dt
+                if min_d is None:
+                    min_d = _dt.date(1800, 1, 1)
+                if max_d is None:
+                    max_d = _dt.date.today()
+            except Exception:
+                pass
+        kwargs = {}
+        if min_d is not None:
+            kwargs["min_value"] = min_d
+        if max_d is not None:
+            kwargs["max_value"] = max_d
+        return persist_date_input(f.label, k, **kwargs)
     if f.kind == "checkbox": return persist_checkbox(f.label, k)
     if f.kind == "file":     return persist_file_uploader(f.label, k, accept_multiple_files=f.accept_multiple)
     st.info(f"Unsupported field kind '{f.kind}' for {f.label}")
@@ -47,7 +65,7 @@ def _render_field(ns: str, f: Field):
 def render_form(spec: FormSpec, ns: str):
     st.subheader(spec.title)
     for sec in spec.sections:
-        with st.expander(sec.title, expanded=True):
+        with st.expander(sec.title, expanded=False):
             for f in sec.fields:
                 _render_field(ns, f)
             if sec.component_id:
@@ -77,7 +95,15 @@ def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any
                 elif val is not None:
                     uploads.append(val)
             else:
-                sec_dict[f.label] = val
+                # Normalize date to YYYY/MM/DD for consistency when serializing
+                if f.kind == "date" and val is not None:
+                    try:
+                        # Streamlit date_input returns datetime.date
+                        sec_dict[f.label] = val.strftime("%Y/%m/%d")
+                    except Exception:
+                        sec_dict[f.label] = val
+                else:
+                    sec_dict[f.label] = val
 
         # Component payload
         if sec.component_id:
@@ -113,6 +139,28 @@ def validate(spec: FormSpec, ns: str) -> List[str]:
                 else:
                     if v in (None, "", []):
                         errs.append(f"[{sec.title}] {f.label} is required.")
+            # Date bounds validation (no future, not before min_date)
+            if f.kind == "date" and v is not None:
+                try:
+                    min_d, max_d = get_date_bounds(f.key)
+                except Exception:
+                    min_d, max_d = (None, None)
+                # Fallback for Date of Registration
+                if f.key == "date_of_registration":
+                    try:
+                        import datetime as _dt
+                        if min_d is None:
+                            min_d = _dt.date(1800, 1, 1)
+                        if max_d is None:
+                            max_d = _dt.date.today()
+                    except Exception:
+                        pass
+                # If max bound provided, disallow dates after it
+                if max_d is not None and v > max_d:
+                    errs.append(f"[{sec.title}] {f.label} cannot be in the future.")
+                # If min bound provided, disallow dates before it
+                if min_d is not None and v < min_d:
+                    errs.append(f"[{sec.title}] {f.label} cannot be before {min_d.strftime('%Y/%m/%d')}.")
         # Component validation
         if sec.component_id:
             comp = get_component(sec.component_id)

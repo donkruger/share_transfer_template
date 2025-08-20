@@ -9,7 +9,7 @@ from app.utils import (
     persist_number_input, persist_text_input, persist_selectbox,
     persist_date_input, persist_file_uploader
 )
-from app.controlled_lists_enhanced import get_member_role_options, get_countries
+from app.controlled_lists_enhanced import get_member_role_options, get_countries, get_dial_code_for_country_label
 
 def _digits_only(s: str) -> str:
     return re.sub(r"\D", "", s or "")
@@ -109,7 +109,18 @@ class NaturalPersonsComponent(SectionComponent):
                         min_value=datetime.date.today() + datetime.timedelta(days=1))
 
                 persist_text_input("Email", inst_key(ns, instance_id, f"email_{i}"))
-                persist_text_input("Telephone", inst_key(ns, instance_id, f"tel_{i}"))
+                # Auto-fill dialing code based on residence country where possible
+                dial_key = inst_key(ns, instance_id, f"tel_code_{i}")
+                residence_country = st.session_state.get(inst_key(ns, instance_id, f"residence_country_{i}"), "")
+                auto_dial = get_dial_code_for_country_label(residence_country)
+                if auto_dial and not st.session_state.get(dial_key):
+                    # Set only permanent key - persist_widget will handle the temp key
+                    st.session_state[dial_key] = auto_dial
+                dc, pn = st.columns([1,2])
+                with dc:
+                    persist_text_input("Dialing Code", dial_key, help="Auto-filled from Country of Residence")
+                with pn:
+                    persist_text_input("Telephone", inst_key(ns, instance_id, f"tel_{i}"))
                 
                 # Role-specific additional fields per Entity Roles Rules Specification
                 self._render_role_specific_fields(ns, instance_id, i, config)

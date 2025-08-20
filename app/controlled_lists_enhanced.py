@@ -23,6 +23,7 @@ class ControlledListManager:
     def __init__(self):
         self._controlled_lists = self._load_controlled_lists()
         self._countries = self._load_countries_from_csv()
+        self._country_dial_codes = self._load_country_dial_codes()
     
     def _load_controlled_lists(self) -> Dict[str, Any]:
         """Load structured controlled lists from JSON file."""
@@ -97,6 +98,34 @@ class ControlledListManager:
                 {"code": "GB", "label": "United Kingdom", "iso_alpha2": "GB", "is_active": True, "sort_order": 2},
                 {"code": "US", "label": "United States", "iso_alpha2": "US", "is_active": True, "sort_order": 3},
             ]
+
+    def _load_country_dial_codes(self) -> Dict[str, str]:
+        """Load country dialing codes from CountryListV2.csv (label -> "+code")."""
+        dial_map: Dict[str, str] = {}
+        try:
+            csv_path = Path(__file__).parent / "common_form_sections" / "CountryListV2.csv"
+            if not csv_path.exists():
+                return dial_map
+            with open(csv_path, 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    label = (row.get('Country Name') or '').strip()
+                    dial_col = (row.get('Dialing Code') or '').strip()
+                    # Extract trailing +NN or +N... pattern
+                    dial_code = ""
+                    if dial_col:
+                        # Find last token starting with '+'
+                        parts = dial_col.split()
+                        for token in reversed(parts):
+                            if token.startswith('+'):
+                                dial_code = token
+                                break
+                    if label and dial_code:
+                        dial_map[label] = dial_code
+            return dial_map
+        except Exception as e:
+            print(f"Warning: Could not load CountryListV2.csv dialing codes: {e}")
+            return dial_map
     
     def get_list_options(self, list_name: str, include_empty: bool = True, 
                         return_codes: bool = False) -> List[str]:
@@ -203,6 +232,16 @@ def get_entity_types(include_empty: bool = False, return_codes: bool = False) ->
 def get_countries(include_empty: bool = True, return_codes: bool = False) -> List[str]:
     """Get comprehensive list of Country options with South Africa prioritized."""
     return _controlled_list_manager.get_list_options("countries", include_empty, return_codes)
+
+def get_dial_code_for_country_label(country_label: str) -> str:
+    """Return the international dialing code (e.g., "+27") for a given country label.
+    Falls back to empty string if unknown.
+    """
+    try:
+        mapping = _controlled_list_manager._country_dial_codes  # internal map loaded from V2 CSV
+        return mapping.get((country_label or '').strip(), "")
+    except Exception:
+        return ""
 
 
 # ===== BACKWARD COMPATIBILITY FUNCTIONS =====

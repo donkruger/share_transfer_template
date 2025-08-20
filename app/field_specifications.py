@@ -288,6 +288,43 @@ class FieldSpecificationManager:
             pass
         
         return errors
+
+    def _coerce_to_date(self, value: Any) -> Optional[datetime.date]:
+        """Best-effort conversion of a spec value to a date instance.
+        Handles dynamic expressions via _parse_dynamic_value and ISO dates (YYYY-MM-DD).
+        """
+        if value is None:
+            return None
+        # First resolve dynamic expressions like today/today-18years/today+1day
+        resolved = self._parse_dynamic_value(value) if isinstance(value, str) else value
+        # If already a date
+        if isinstance(resolved, datetime.date):
+            return resolved
+        # If datetime -> date
+        if isinstance(resolved, datetime.datetime):
+            return resolved.date()
+        # If string in ISO format
+        if isinstance(resolved, str):
+            try:
+                return datetime.date.fromisoformat(resolved)
+            except Exception:
+                return None
+        return None
+
+    def get_date_bounds(self, field_name: str) -> Tuple[Optional[datetime.date], Optional[datetime.date]]:
+        """Return (min_date, max_date) for a date field based on its specification.
+
+        - Supports ISO dates (YYYY-MM-DD)
+        - Supports dynamic expressions already handled by _parse_dynamic_value
+        - If max_value is missing but equals to symbolic 'today' in other formats, resolves accordingly
+        """
+        spec = self.get_field_spec(field_name)
+        if not spec:
+            return None, None
+
+        min_date = self._coerce_to_date(spec.min_value)
+        max_date = self._coerce_to_date(spec.max_value)
+        return min_date, max_date
     
     def _validate_dependencies(self, spec: FieldSpec, value: Any, context: Dict[str, Any]) -> List[str]:
         """Validate field dependencies."""
@@ -363,6 +400,10 @@ def get_fields_for_role(role_id: str) -> List[Dict[str, Any]]:
 def get_entity_fields() -> List[Dict[str, Any]]:
     """Get entity fields."""
     return _field_spec_manager.get_entity_fields()
+
+def get_date_bounds(field_name: str) -> Tuple[Optional[datetime.date], Optional[datetime.date]]:
+    """Get (min_date, max_date) bounds for a date field from specs."""
+    return _field_spec_manager.get_date_bounds(field_name)
 
 
 if __name__ == "__main__":
