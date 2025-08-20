@@ -133,8 +133,73 @@ def persist_checkbox(label: str, state_key: str, **kwargs):
     return persist_widget(st.checkbox, label, state_key, **kwargs)
 
 def persist_file_uploader(label: str, state_key: str, **kwargs):
-    """Persistent file uploader widget."""
-    return persist_widget(st.file_uploader, label, state_key, **kwargs)
+    """Persistent file uploader widget with max file size enforcement.
+
+    Enforces a per-file size limit (default 4 MB). Oversized files are ignored
+    and a user-facing error is displayed. For multiple uploads, oversized files
+    are filtered out while valid files are retained.
+    """
+    def _get_max_upload_mb() -> int:
+        try:
+            # Optional override via secrets: [app] max_upload_mb = 4
+            return int(st.secrets.get("app", {}).get("max_upload_mb", 4))
+        except Exception:
+            return 4
+
+    # Render the uploader
+    result = persist_widget(st.file_uploader, label, state_key, **kwargs)
+
+    # Post-process to enforce size limit
+    max_mb = _get_max_upload_mb()
+    limit_bytes = max_mb * 1024 * 1024
+    accept_multiple = bool(kwargs.get("accept_multiple_files", False))
+
+    def _file_size_bytes(uploaded_file) -> int | None:
+        try:
+            size_attr = getattr(uploaded_file, "size", None)
+            if isinstance(size_attr, int):
+                return size_attr
+        except Exception:
+            pass
+        try:
+            # Prefer buffer size if available
+            buf = uploaded_file.getbuffer()  # type: ignore[attr-defined]
+            return getattr(buf, "nbytes", None) or len(buf)
+        except Exception:
+            try:
+                return len(uploaded_file.getvalue())
+            except Exception:
+                return None
+
+    current_value = st.session_state.get(state_key)
+
+    if accept_multiple:
+        if isinstance(current_value, list) and current_value:
+            valid_files = []
+            oversized: list[tuple[str, float]] = []
+            for f in current_value:
+                if f is None:
+                    continue
+                size_bytes = _file_size_bytes(f)
+                if size_bytes is not None and size_bytes > limit_bytes:
+                    oversized.append((getattr(f, "name", "<file>"), size_bytes / (1024 * 1024)))
+                else:
+                    valid_files.append(f)
+            if oversized:
+                names = ", ".join([f"{n} ({sz:.2f} MB)" for n, sz in oversized])
+                st.error(f"The following files exceed the {max_mb} MB limit and were ignored: {names}")
+            st.session_state[state_key] = valid_files if valid_files else None
+    else:
+        f = current_value
+        if f is not None:
+            size_bytes = _file_size_bytes(f)
+            if size_bytes is not None and size_bytes > limit_bytes:
+                mb = size_bytes / (1024 * 1024)
+                name = getattr(f, "name", "<file>")
+                st.error(f"File exceeds the {max_mb} MB limit: {name} ({mb:.2f} MB). Please upload a smaller file.")
+                st.session_state[state_key] = None
+
+    return st.session_state.get(state_key)
 
 def persist_multiselect(label: str, state_key: str, **kwargs):
     """Persistent multiselect widget."""
