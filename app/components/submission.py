@@ -16,9 +16,11 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
 
     # Show a spinner while processing
     with st.spinner("Processing submission..."):
-        reg_name = st.session_state.get("reg_name", "UnknownClient")
+        # Extract entity name from display name (set in main.py from legal_name)
+        entity_name = st.session_state.get("entity_display_name", "Unknown Entity")
         dt = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-        pdf_name = f"EasyETFs_DDQ_{reg_name.replace(' ', '')}_{dt}.pdf"
+        safe_entity_name = entity_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        pdf_name = f"Entity_Onboarding_{safe_entity_name}_{dt}.pdf"
 
         # 1. Send the email with all data and attachments
         send_submission_email(answers, uploaded_files)
@@ -27,13 +29,13 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
         pdf_bytes = make_pdf(answers)
 
     # Success message with balloons
-    st.success(f"✅ DDQ for **{reg_name}** captured successfully. Please download your files below.")
+    st.success(f"✅ Entity Onboarding submission for **{entity_name}** captured successfully. Please download your files below.")
     st.balloons()
 
     # Download section
     st.markdown("### 📄 Download Your Documents")
     st.download_button(
-        label="📄 Download Questionnaire Summary (PDF)",
+        label="📄 Download Entity Onboarding Summary (PDF)",
         data=pdf_bytes,
         file_name=pdf_name,
         mime="application/pdf",

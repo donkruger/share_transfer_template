@@ -93,9 +93,10 @@ def main():
     render_form(spec, ns)
 
     # Capture a display name for downstream artifacts (email/PDF)
-    entity_name = st.session_state.get(ns_key(ns, "entity_name"), "")
-    if entity_name:
-        st.session_state["entity_display_name"] = entity_name
+    # Try to get the legal name from the entity details
+    legal_name = st.session_state.get(ns_key(ns, "legal_name"), "")
+    if legal_name:
+        st.session_state["entity_display_name"] = legal_name
 
     st.markdown("---")
     st.page_link('pages/3_Declaration_and_Submit.py', label='Proceed to Declaration & Submit', icon='📝')

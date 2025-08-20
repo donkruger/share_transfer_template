@@ -21,15 +21,31 @@ def send_submission_email(
     """
     try:
         # --- Credentials ---
-        sender_email = st.secrets["email_credentials"]["email_address"]
-        sender_password = st.secrets["email_credentials"]["app_password"]
+        try:
+            sender_email = st.secrets["email_credentials"]["email_address"]
+            sender_password = st.secrets["email_credentials"]["app_password"]
+        except KeyError as ke:
+            st.error(f"❌ Missing email credentials in secrets.toml: {ke}")
+            return
         
         # --- Set the recipient email address here ---
         recipient_email = "jpearse@purplegroup.co.za" # <-- CHANGE THIS LINE
 
         # --- Extract Entity Information ---
         entity_user_id = answers.get("Entity User ID", "Unknown")
-        entity_name = answers.get("Entity Details", {}).get("Entity Name", "Unknown Entity")
+        
+        # Extract entity name from the correct path in the data structure
+        entity_name = "Unknown Entity"
+        entity_details = answers.get("Entity Details", {})
+        if entity_details:
+            # Try common field names for entity name
+            entity_name = (entity_details.get("Legal / Registered Name") or 
+                          entity_details.get("Entity Name") or 
+                          entity_details.get("Trust Name") or
+                          entity_details.get("Partnership Name") or
+                          entity_details.get("CC Registered Name") or
+                          st.session_state.get("entity_display_name", "Unknown Entity"))
+        
         entity_type = st.session_state.get("entity_type", "Unknown Type")
         
         # --- Email Content ---
@@ -80,16 +96,20 @@ def send_submission_email(
         msg.attach(pdf_part)
 
         # --- NEW: Attach CSV Data File ---
-        from app.csv_generator import make_csv
-        csv_string = make_csv(answers)
-        csv_part = MIMEBase("application", "octet-stream")
-        csv_part.set_payload(csv_string.encode("utf-8"))  # Encode the string to bytes
-        encoders.encode_base64(csv_part)
-        csv_part.add_header(
-            "Content-Disposition",
-            f"attachment; filename={base_filename}.csv",
-        )
-        msg.attach(csv_part)
+        try:
+            from app.csv_generator import make_csv
+            csv_string = make_csv(answers)
+            csv_part = MIMEBase("application", "octet-stream")
+            csv_part.set_payload(csv_string.encode("utf-8"))  # Encode the string to bytes
+            encoders.encode_base64(csv_part)
+            csv_part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={base_filename}.csv",
+            )
+            msg.attach(csv_part)
+        except Exception as csv_error:
+            st.warning(f"⚠️ Could not generate CSV file: {csv_error}")
+            # Continue without CSV attachment
 
         # --- Attach User Uploaded Files ---
         valid_uploads = [f for f in uploaded_files if f is not None]
@@ -107,9 +127,12 @@ def send_submission_email(
         # Note: Ensure the sender email is configured for SMTP access.
         # For Gmail/Google Workspace accounts, use smtp.gmail.com
         # For other providers, update the SMTP server address accordingly.
+        st.info(f"📧 Attempting to send email to: {recipient_email}")
+        
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender_email, sender_password)
             server.send_message(msg)
+            st.info("📧 Email sent successfully via SMTP")
         
         st.success(f"✅ Entity Onboarding submission sent successfully!")
         st.info(f"📧 Email sent to: {recipient_email}")
