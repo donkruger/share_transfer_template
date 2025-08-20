@@ -29,9 +29,16 @@ render_sidebar()
 logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "Ownthemarket.png"
 if logo_path.exists():
     # Display logo across full width for landscape/wide format
-    st.image(str(logo_path), 
-            use_column_width=True,  # Spans entire page width
-            output_format="PNG")
+    try:
+        # Try new parameter for newer Streamlit versions
+        st.image(str(logo_path), 
+                use_container_width=True,
+                output_format="PNG")
+    except TypeError:
+        # Fallback to deprecated parameter for older versions
+        st.image(str(logo_path), 
+                use_column_width=True,
+                output_format="PNG")
 else:
     st.warning("Logo not found at expected path")
 
