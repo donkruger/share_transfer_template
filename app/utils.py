@@ -66,6 +66,7 @@ def initialize_state():
             "s2_name": "", "s2_desig": "",
             # Development mode toggle for testing
             "dev_mode": False,
+            "dev_recipient_email": "jpearse@purplegroup.co.za",
             # Favicon path for consistent use across pages
             "favicon_path": str(favicon_path),
             

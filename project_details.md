@@ -1258,6 +1258,7 @@ The system includes a **Development Mode Toggle** that allows developers and tes
 
 - **Toggle Control**: Simple button to enable/disable development mode
 - **Validation Bypass**: All form validation rules are disabled when dev mode is active
+- **Email Configuration**: Configurable recipient email address for testing (only in dev mode)
 - **Visual Indicators**: Multiple clear warnings and status displays throughout the application
 - **Session Persistence**: Development mode setting persists across page navigation
 - **Safe Fallback**: Graceful handling if development mode functions are unavailable
@@ -1267,6 +1268,7 @@ The system includes a **Development Mode Toggle** that allows developers and tes
 #### **Main Page** (`app/main.py`)
 - **Collapsible Section**: "🔧 Development Mode" expandable section above entity type selector
 - **Toggle Button**: "Toggle Dev Mode" button with clear status display
+- **Email Configuration**: Text input field to configure recipient email address (dev mode only)
 - **Form Indicator**: Info box above the form when dev mode is active
 - **Status Display**: Green/red indicators showing current mode status
 
@@ -1306,9 +1308,25 @@ The development mode has been thoroughly tested and confirmed to work correctly:
 ### **💡 Use Cases**
 
 - **Email Engine Testing**: Test submission workflows without filling all required fields
+- **Custom Email Testing**: Configure different recipient emails for testing various scenarios
 - **Development Workflow**: Rapid iteration during development phases
 - **QA Testing**: Test edge cases and error handling scenarios
 - **Demo Purposes**: Demonstrate system functionality with minimal data entry
+
+### **📧 Email Configuration in Dev Mode**
+
+When development mode is enabled, users can configure the recipient email address for testing purposes:
+
+- **Default Email**: `jpearse@purplegroup.co.za` (production default)
+- **Configurable Field**: Text input that appears only in dev mode
+- **Session Persistence**: Email setting persists across page navigation
+- **Production Safety**: Always reverts to default email when dev mode is disabled
+- **Real-time Updates**: Email changes are immediately reflected in the UI
+
+**Implementation Details:**
+- **Email Sender** (`app/email_sender.py`): Checks dev mode and uses configured email
+- **Session State** (`app/utils.py`): Initializes and manages `dev_recipient_email`
+- **UI Integration** (`app/main.py`): Provides email configuration interface in dev mode
 
 ---
 
