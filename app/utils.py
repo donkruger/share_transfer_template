@@ -64,6 +64,8 @@ def initialize_state():
             "entity_display_name": "",
             "s1_name": "", "s1_desig": "",
             "s2_name": "", "s2_desig": "",
+            # Development mode toggle for testing
+            "dev_mode": False,
             # Favicon path for consistent use across pages
             "favicon_path": str(favicon_path),
             
@@ -87,6 +89,14 @@ def initialize_state():
     
     # Always run cleanup to handle legacy values
     _cleanup_legacy_values()
+
+def is_dev_mode() -> bool:
+    """Check if development mode is enabled."""
+    return st.session_state.get("dev_mode", False)
+
+def toggle_dev_mode():
+    """Toggle development mode on/off."""
+    st.session_state.dev_mode = not st.session_state.get("dev_mode", False)
 
 def persist_widget(widget_func, label: str, state_key: str, **kwargs):
     """A generic helper to make any widget's state survive page switches."""
@@ -138,6 +148,9 @@ def persist_file_uploader(label: str, state_key: str, **kwargs):
     Enforces a per-file size limit (default 4 MB). Oversized files are ignored
     and a user-facing error is displayed. For multiple uploads, oversized files
     are filtered out while valid files are retained.
+    
+    Note: File uploaders use direct session state management to avoid 
+    StreamlitValueAssignmentNotAllowedError in cloud environments.
     """
     def _get_max_upload_mb() -> int:
         try:
@@ -146,15 +159,10 @@ def persist_file_uploader(label: str, state_key: str, **kwargs):
         except Exception:
             return 4
 
-    # Render the uploader
-    result = persist_widget(st.file_uploader, label, state_key, **kwargs)
-
-    # Post-process to enforce size limit
-    max_mb = _get_max_upload_mb()
-    limit_bytes = max_mb * 1024 * 1024
-    accept_multiple = bool(kwargs.get("accept_multiple_files", False))
-
     def _file_size_bytes(uploaded_file) -> int | None:
+        """Get file size in bytes safely."""
+        if uploaded_file is None:
+            return None
         try:
             size_attr = getattr(uploaded_file, "size", None)
             if isinstance(size_attr, int):
@@ -171,13 +179,25 @@ def persist_file_uploader(label: str, state_key: str, **kwargs):
             except Exception:
                 return None
 
-    current_value = st.session_state.get(state_key)
-
+    # File uploaders don't need the persist_widget pattern - use direct approach
+    # to avoid session state assignment conflicts in Streamlit Cloud
+    
+    # Create a unique key for the widget to avoid conflicts
+    widget_key = f"_upload_{state_key}"
+    
+    # Render the file uploader widget directly
+    uploaded_files = st.file_uploader(label, key=widget_key, **kwargs)
+    
+    # Process and validate uploaded files
+    max_mb = _get_max_upload_mb()
+    limit_bytes = max_mb * 1024 * 1024
+    accept_multiple = bool(kwargs.get("accept_multiple_files", False))
+    
     if accept_multiple:
-        if isinstance(current_value, list) and current_value:
+        if uploaded_files:
             valid_files = []
             oversized: list[tuple[str, float]] = []
-            for f in current_value:
+            for f in uploaded_files:
                 if f is None:
                     continue
                 size_bytes = _file_size_bytes(f)
@@ -185,19 +205,37 @@ def persist_file_uploader(label: str, state_key: str, **kwargs):
                     oversized.append((getattr(f, "name", "<file>"), size_bytes / (1024 * 1024)))
                 else:
                     valid_files.append(f)
+            
             if oversized:
                 names = ", ".join([f"{n} ({sz:.2f} MB)" for n, sz in oversized])
                 st.error(f"The following files exceed the {max_mb} MB limit and were ignored: {names}")
-            st.session_state[state_key] = valid_files if valid_files else None
+            
+            # Store valid files in session state
+            if valid_files:
+                st.session_state[state_key] = valid_files
+            elif state_key in st.session_state:
+                # Clear the state if no valid files
+                st.session_state[state_key] = None
+        elif uploaded_files is None and state_key in st.session_state:
+            # File uploader returned None - keep existing state
+            pass  # Don't modify existing uploads
     else:
-        f = current_value
-        if f is not None:
-            size_bytes = _file_size_bytes(f)
+        # Single file upload
+        if uploaded_files is not None:
+            size_bytes = _file_size_bytes(uploaded_files)
             if size_bytes is not None and size_bytes > limit_bytes:
                 mb = size_bytes / (1024 * 1024)
-                name = getattr(f, "name", "<file>")
+                name = getattr(uploaded_files, "name", "<file>")
                 st.error(f"File exceeds the {max_mb} MB limit: {name} ({mb:.2f} MB). Please upload a smaller file.")
-                st.session_state[state_key] = None
+                # Don't store oversized files
+                if state_key in st.session_state:
+                    st.session_state[state_key] = None
+            else:
+                # Store valid file
+                st.session_state[state_key] = uploaded_files
+        elif uploaded_files is None and state_key not in st.session_state:
+            # Initialize state for new uploader
+            st.session_state[state_key] = None
 
     return st.session_state.get(state_key)
 

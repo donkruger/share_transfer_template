@@ -31,7 +31,8 @@ class JuristicEntitiesComponent(SectionComponent):
         n = persist_number_input(f"Number of {role_label.lower()}s", count_key, min_value=0, step=1)
 
         for i in range(st.session_state.get(count_key, 0)):
-            with st.expander(f"{role_label} #{i+1}", expanded=False):
+            st.markdown(f"##### {role_label} #{i+1}")
+            with st.container():
                 
                 # 1. Entity Type (Required)
                 persist_selectbox("Entity Type",
@@ -58,6 +59,10 @@ class JuristicEntitiesComponent(SectionComponent):
                 
                 # Role-specific additional fields
                 self._render_role_specific_fields(ns, instance_id, i, config)
+                
+                # Add separator between entities
+                if i < st.session_state.get(count_key, 0) - 1:
+                    st.markdown("---")
 
     def _render_role_specific_fields(self, ns: str, instance_id: str, i: int, config: dict):
         """Render additional fields based on the role context."""
@@ -79,6 +84,14 @@ class JuristicEntitiesComponent(SectionComponent):
                 help="Does this entity exercise executive control?")
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
+        # Check if development mode is enabled - if so, skip all validation
+        try:
+            from app.utils import is_dev_mode
+            if is_dev_mode():
+                return []  # Return empty list (no errors) when dev mode is enabled
+        except ImportError:
+            pass  # If utils import fails, continue with normal validation
+        
         errs: List[str] = []
         role_label = config.get("role_label", "Entity")
         min_count = int(config.get("min_count", 0))

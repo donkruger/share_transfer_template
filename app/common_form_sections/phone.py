@@ -32,6 +32,14 @@ class PhoneComponent(SectionComponent):
             persist_text_input(label, inst_key(ns, instance_id, "number"))
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
+        # Check if development mode is enabled - if so, skip all validation
+        try:
+            from app.utils import is_dev_mode
+            if is_dev_mode():
+                return []  # Return empty list (no errors) when dev mode is enabled
+        except ImportError:
+            pass  # If utils import fails, continue with normal validation
+        
         errs: List[str] = []
         dial = st.session_state.get(inst_key(ns, instance_id, "code"), "")
         num = st.session_state.get(inst_key(ns, instance_id, "number"), "")

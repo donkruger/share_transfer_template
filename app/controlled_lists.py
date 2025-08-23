@@ -17,7 +17,7 @@ As per functional specification section 4:
 # ===== 4.1 SOURCE OF FUNDS OPTIONS =====
 
 SOURCE_OF_FUNDS_OPTIONS = [
-    "",  # Empty option for multiselect
+    "",  # Empty option for selectbox
     "Business Operating Income",
     "Commission",
     "Company Profits",
@@ -52,7 +52,10 @@ def get_source_of_funds_options():
     return SOURCE_OF_FUNDS_OPTIONS.copy()
 
 def get_source_of_funds_multiselect():
-    """Get Source of Funds options for multiselect widgets (excludes empty option)."""
+    """Get Source of Funds options for selectbox widgets (excludes empty option).
+    
+    Note: This function name is kept for backward compatibility but now supports single select.
+    """
     return [opt for opt in SOURCE_OF_FUNDS_OPTIONS if opt != ""]
 
 

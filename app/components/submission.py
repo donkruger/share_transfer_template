@@ -14,6 +14,20 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
         st.error("❗ You must tick the declaration checkbox before submitting.")
         st.stop()
 
+    # Debug information for development mode
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            st.info("🔧 **Development Mode Active** - Debugging submission data...")
+            st.json({
+                "answers_type": type(answers).__name__,
+                "answers_keys": list(answers.keys()) if isinstance(answers, dict) else "N/A",
+                "answers_sample": str(answers)[:200] + "..." if len(str(answers)) > 200 else str(answers),
+                "uploaded_files_count": len([f for f in uploaded_files if f is not None])
+            })
+    except ImportError:
+        pass
+
     # Show a spinner while processing
     with st.spinner("Processing submission..."):
         # Extract entity name from display name (set in main.py from legal_name)
@@ -26,7 +40,13 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
         send_submission_email(answers, uploaded_files)
 
         # 2. Generate PDF for download
-        pdf_bytes = make_pdf(answers)
+        try:
+            pdf_bytes = make_pdf(answers)
+        except Exception as e:
+            st.error(f"❌ PDF generation failed: {e}")
+            st.error(f"Answers data type: {type(answers).__name__}")
+            st.error(f"Answers content: {str(answers)[:500]}")
+            st.stop()
 
     # Success message with balloons
     st.success(f"✅ Entity Onboarding submission for **{entity_name}** captured successfully. Please download your files below.")

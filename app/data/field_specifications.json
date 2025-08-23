@@ -41,9 +41,9 @@
             "max_value": "today"
         },
         "source_of_funds": {
-            "data_type": "array",
+            "data_type": "string",
             "required_rule": "always",
-            "ui_control": "multiselect",
+            "ui_control": "select",
             "controlled_list": "source_of_funds"
         },
         "industry": {
@@ -255,7 +255,6 @@
             "dependencies": {
                 "country": "ZA"
             },
-            "controlled_list_if_sa": "sa_provinces",
             "example": "Gauteng"
         },
         "postal_code": {
@@ -272,8 +271,7 @@
             "data_type": "string",
             "required_rule": "always",
             "ui_control": "select",
-            "controlled_list": "countries",
-            "default": "South Africa"
+            "controlled_list": "countries"
         }
     }
 }

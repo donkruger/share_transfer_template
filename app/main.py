@@ -47,6 +47,31 @@ def main():
 
     st.markdown('<h1 class="gradient-title">Juristics ReFICA</h1>', unsafe_allow_html=True)
     
+    # Development Mode Toggle (for testing purposes)
+    with st.expander("🔧 Development Mode", expanded=False):
+        st.markdown("""
+        **Development Mode** allows you to bypass form validation for testing purposes.
+        ⚠️ **Warning**: This should only be used for testing - it will allow submission with incomplete data.
+        """)
+        
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            if st.button("Toggle Dev Mode", type="secondary"):
+                from app.utils import toggle_dev_mode
+                toggle_dev_mode()
+                st.rerun()
+        
+        with col2:
+            from app.utils import is_dev_mode
+            dev_status = "🟢 **ENABLED**" if is_dev_mode() else "🔴 **DISABLED**"
+            st.markdown(f"**Status**: {dev_status}")
+            
+            if is_dev_mode():
+                st.success("✅ Development mode is active. Form validation is disabled.")
+                st.info("💡 You can now test the email engine without filling all required fields.")
+            else:
+                st.info("ℹ️ Development mode is disabled. All form validation rules apply.")
+    
     # Welcome card with instructions
     st.markdown("""
     <div style="
@@ -89,6 +114,17 @@ def main():
     if not spec:
         st.warning("This entity type is not yet configured.")
         return
+
+    # Development Mode Form Indicator
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            st.info("""
+            🔧 **Development Mode Active** - Form validation is disabled for testing purposes.
+            You can now test the email engine without filling all required fields.
+            """)
+    except ImportError:
+        pass
 
     render_form(spec, ns)
 

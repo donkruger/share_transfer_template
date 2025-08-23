@@ -44,6 +44,19 @@ else:
 
 st.markdown('<h1 class="gradient-title">Declaration & Submit</h1>', unsafe_allow_html=True)
 
+# Development Mode Indicator
+try:
+    from app.utils import is_dev_mode
+    if is_dev_mode():
+        st.warning("""
+        ⚠️ **DEVELOPMENT MODE ACTIVE** ⚠️
+        
+        Form validation is disabled. You can submit with incomplete data for testing purposes.
+        This should only be used for development/testing - not for production submissions.
+        """)
+except ImportError:
+    pass
+
 persist_checkbox("I/we declare the information provided is true, accurate, complete, and up-to-date.", "accept")
 st.markdown(" ")
 cols = st.columns(2)

@@ -198,6 +198,14 @@ class AuthorisedRepresentativeComponent(SectionComponent):
 
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
+        # Check if development mode is enabled - if so, skip all validation
+        try:
+            from app.utils import is_dev_mode
+            if is_dev_mode():
+                return []  # Return empty list (no errors) when dev mode is enabled
+        except ImportError:
+            pass  # If utils import fails, continue with normal validation
+        
         errs: List[str] = []
         prefix = "[Authorised Representative]"
         

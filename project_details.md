@@ -12,6 +12,7 @@ The system has been enhanced to align with semantic specification requirements:
 - **📄 Document Requirements**: Structured document upload requirements by entity type and role
 - **⚡ Enhanced Validation Engine**: Multi-layer validation with business rule enforcement
 - **🎯 Dynamic Form Generation**: Forms built from declarative specifications
+- **🧪 Development Mode Toggle**: Testing mode that bypasses all form validation for email engine testing
 
 ## 🏗️ **Architecture Overview**
 
@@ -1246,6 +1247,68 @@ If you want a neutral assistant now (you can swap the knowledge file later), twe
 * **Future‑proof**: Add new common sections (address, contact, bank details) by following the same interface.
 
 ---
+
+---
+
+## 🧪 **Development Mode Toggle**
+
+The system includes a **Development Mode Toggle** that allows developers and testers to bypass all form validation rules for testing purposes, particularly useful for testing the email engine without populating every form field.
+
+### **🔧 Features**
+
+- **Toggle Control**: Simple button to enable/disable development mode
+- **Validation Bypass**: All form validation rules are disabled when dev mode is active
+- **Visual Indicators**: Multiple clear warnings and status displays throughout the application
+- **Session Persistence**: Development mode setting persists across page navigation
+- **Safe Fallback**: Graceful handling if development mode functions are unavailable
+
+### **📍 Implementation Locations**
+
+#### **Main Page** (`app/main.py`)
+- **Collapsible Section**: "🔧 Development Mode" expandable section above entity type selector
+- **Toggle Button**: "Toggle Dev Mode" button with clear status display
+- **Form Indicator**: Info box above the form when dev mode is active
+- **Status Display**: Green/red indicators showing current mode status
+
+#### **Declaration Page** (`app/pages/3_Declaration_and_Submit.py`)
+- **Warning Banner**: Prominent warning when dev mode is active
+- **Clear Messaging**: Explicit indication that validation is disabled
+
+#### **Validation System** (All Components)
+- **Form Engine**: Main validation function respects dev mode
+- **Component Level**: All reusable components check dev mode before validation
+- **Consistent Behavior**: Uniform validation bypass across all form sections
+
+### **🔒 Safety Features**
+
+- **Warning Messages**: Clear warnings that dev mode is for testing only
+- **Multiple Indicators**: Visual cues in multiple locations when dev mode is active
+- **Import Safety**: Graceful fallback if utility functions are unavailable
+- **Session Isolation**: Dev mode setting doesn't affect other users
+
+### **📋 Usage Instructions**
+
+1. **Enable Development Mode**: Click "Toggle Dev Mode" button in the expandable section
+2. **Fill Minimal Data**: Enter just enough data to test (e.g., entity type, entity user ID)
+3. **Test Submission**: Navigate to Declaration & Submit page and submit
+4. **Test Email Engine**: Your email system will receive submissions with minimal data
+5. **Disable Dev Mode**: Toggle back to normal mode when testing is complete
+
+### **🧪 Testing Verification**
+
+The development mode has been thoroughly tested and confirmed to work correctly:
+- ✅ **Dev Mode OFF**: Normal validation behavior (33+ validation errors for empty forms)
+- ✅ **Dev Mode ON**: All validation bypassed (0 validation errors)
+- ✅ **Component Level**: Individual components respect dev mode setting
+- ✅ **Form Level**: Main form validation respects dev mode setting
+- ✅ **Cross-Page**: Dev mode setting persists across all application pages
+
+### **💡 Use Cases**
+
+- **Email Engine Testing**: Test submission workflows without filling all required fields
+- **Development Workflow**: Rapid iteration during development phases
+- **QA Testing**: Test edge cases and error handling scenarios
+- **Demo Purposes**: Demonstrate system functionality with minimal data entry
 
 ---
 

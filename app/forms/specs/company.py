@@ -62,7 +62,8 @@ SPEC = FormSpec(
                 "role_label": "Shareholder",
                 "min_count": 0,
                 "show_uploads": True,
-                "help_text": "Natural person shareholders with percentage shareholding capture."
+                "show_poa_uploads": False,  # Disable POA uploads for shareholders
+                "help_text": "Natural person shareholders with percentage shareholding capture. Only ID document required."
             }
         ),
         Section(

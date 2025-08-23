@@ -29,7 +29,8 @@ def send_submission_email(
             return
         
         # --- Set the recipient email address here ---
-        recipient_email = "jpearse@purplegroup.co.za" # <-- CHANGE THIS LINE
+        # recipient_email = "jpearse@purplegroup.co.za" 
+        recipient_email = "don.kruger123@gmail.com" 
 
         # --- Extract Entity Information ---
         entity_user_id = answers.get("Entity User ID", "Unknown")

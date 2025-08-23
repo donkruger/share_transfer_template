@@ -18,6 +18,7 @@ class Field:
     required: bool = False
     options: Optional[List[str]] = None
     accept_multiple: bool = False
+    help_text: Optional[str] = None
 
 @dataclass
 class Section:
@@ -60,6 +61,13 @@ def _render_field(ns: str, f: Field):
         return persist_date_input(f.label, k, **kwargs)
     if f.kind == "checkbox": return persist_checkbox(f.label, k)
     if f.kind == "file":     return persist_file_uploader(f.label, k, accept_multiple_files=f.accept_multiple)
+    if f.kind == "info":     
+        # Display info message with help text if available
+        if f.help_text:
+            st.info(f"{f.label}\n\n{f.help_text}")
+        else:
+            st.info(f.label)
+        return
     st.info(f"Unsupported field kind '{f.kind}' for {f.label}")
 
 def render_form(spec: FormSpec, ns: str):
@@ -82,10 +90,23 @@ def render_form(spec: FormSpec, ns: str):
 def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any]]:
     answers: Dict[str, Any] = {"Entity Type": spec.title}
     uploads: List[Any] = []
+    
+    # Debug information for development mode
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            st.info(f"🔧 **Dev Mode Active** - Serializing answers for {spec.title}")
+    except ImportError:
+        pass
+    
     for sec in spec.sections:
         sec_dict: Dict[str, Any] = {}
         # Simple fields
         for f in sec.fields:
+            # Skip info fields as they are just display messages
+            if f.kind == "info":
+                continue
+                
             val = st.session_state.get(ns_key(ns, f.key))
             if f.kind == "file":
                 has_files = bool(val) if not f.accept_multiple else bool(val and len(val) > 0)
@@ -111,19 +132,85 @@ def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any
             if comp:
                 instance_id = sec.component_args.get("instance_id") or sec.title.lower().replace(" ", "_")
                 component_kwargs = {k: v for k, v in sec.component_args.items() if k != "instance_id"}
-                payload, comp_uploads = comp.serialize(ns=ns, instance_id=instance_id, **component_kwargs)
-                # If fields + component should both appear, merge; otherwise replace:
-                sec_dict.update(payload if isinstance(payload, dict) else {})
-                uploads.extend(comp_uploads or [])
+                
+                # Debug component serialization
+                try:
+                    payload, comp_uploads = comp.serialize(ns=ns, instance_id=instance_id, **component_kwargs)
+                    
+                    # Debug information for development mode
+                    try:
+                        from app.utils import is_dev_mode
+                        if is_dev_mode():
+                            st.info(f"🔧 **Dev Mode Active** - Component {sec.component_id} returned: {type(payload).__name__}")
+                            if isinstance(payload, dict):
+                                st.info(f"  Keys: {list(payload.keys())}")
+                            else:
+                                st.warning(f"  ⚠️ Unexpected payload type: {type(payload).__name__}")
+                                st.warning(f"  Content: {str(payload)[:100]}...")
+                    except ImportError:
+                        pass
+                    
+                    # If fields + component should both appear, merge; otherwise replace:
+                    sec_dict.update(payload if isinstance(payload, dict) else {})
+                    uploads.extend(comp_uploads or [])
+                    
+                except Exception as e:
+                    st.error(f"❌ Error serializing component {sec.component_id}: {e}")
+                    # Continue with other components instead of failing completely
+                    continue
 
         answers[sec.title] = sec_dict
+    
+    # Debug information for development mode
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            st.info(f"🔧 **Dev Mode Active** - Serialized {len(answers)} sections")
+            st.json({
+                "sections": list(answers.keys()),
+                "total_uploads": len(uploads)
+            })
+            
+            # Show the structure of each section
+            for section_name, section_data in answers.items():
+                st.info(f"Section '{section_name}': {type(section_data).__name__}")
+                if isinstance(section_data, dict):
+                    st.info(f"  Keys: {list(section_data.keys())}")
+                else:
+                    st.warning(f"  ⚠️ Unexpected section data type: {type(section_data).__name__}")
+                    st.warning(f"  Content: {str(section_data)[:100]}...")
+    except ImportError:
+        pass
+    
+    # Safety check: ensure we always return a valid dictionary structure
+    if not isinstance(answers, dict):
+        st.warning(f"⚠️ serialize_answers returned {type(answers).__name__}, converting to dict")
+        answers = {"Entity Type": spec.title, "Error": f"Invalid data type: {type(answers).__name__}"}
+    
+    # Ensure all values in answers are serializable
+    for key, value in list(answers.items()):
+        if not isinstance(value, (dict, list, str, int, float, bool)) and value is not None:
+            answers[key] = str(value)
+    
     return answers, uploads
 
 def validate(spec: FormSpec, ns: str) -> List[str]:
+    # Check if development mode is enabled - if so, skip all validation
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            return []  # Return empty list (no errors) when dev mode is enabled
+    except ImportError:
+        pass  # If utils import fails, continue with normal validation
+    
     errs: List[str] = []
     # Field-level required checks
     for sec in spec.sections:
         for f in sec.fields:
+            # Skip info fields as they are just display messages
+            if f.kind == "info":
+                continue
+                
             v = st.session_state.get(ns_key(ns, f.key))
             if f.required:
                 if f.kind == "file":

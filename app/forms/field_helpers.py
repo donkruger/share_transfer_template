@@ -7,7 +7,7 @@ This module provides helper functions to generate form fields with controlled li
 from app.forms.engine import Field
 from app.document_requirements import get_document_upload_schema
 from app.controlled_lists_enhanced import (
-    get_source_of_funds_multiselect,
+    get_source_of_funds_options,
     get_industry_options,
     get_countries
 )
@@ -38,8 +38,8 @@ def create_entity_details_fields(entity_name_label: str = "Entity Name (Register
         Field("country_of_registration", "Country of Registration", "select", required=False, 
               options=get_countries()),
         Field("date_of_registration", "Date of Registration / Establishment", "date", required=True),
-        Field("source_of_funds", "Source of Funds", "multiselect", required=True,
-              options=get_source_of_funds_multiselect()),
+        Field("source_of_funds", "Source of Funds", "select", required=True,
+              options=get_source_of_funds_options(include_empty=True, return_codes=False)),
         Field("industry", "Industry", "select", required=True,
               options=get_industry_options(include_empty=True, return_codes=False))
     ])
@@ -69,6 +69,17 @@ def create_entity_document_upload_fields(entity_type_code: str):
     fields = []
     try:
         schema = get_document_upload_schema(entity_type_code)
+        
+        # Add a friendly message card about attachment size limits
+        # This will be rendered as an info field in the form engine
+        fields.append(Field(
+            "attachment_size_info", 
+            "📎 **Document Upload Guidelines**", 
+            "info", 
+            required=False,
+            help_text="Please ensure your total attachment size does not exceed 25MB, otherwise the submission may fail."
+        ))
+        
         for doc in schema.get("entity_documents", []):
             key = doc.get("document_code", "").lower()
             label = doc.get("description", key)

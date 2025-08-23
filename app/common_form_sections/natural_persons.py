@@ -41,6 +41,7 @@ class NaturalPersonsComponent(SectionComponent):
       - role_label: str = "Person"    (used in UI headings)
       - min_count: int = 0            (enforce minimum count)
       - show_uploads: bool = True     (toggle ID/PoA uploads)
+      - show_poa_uploads: bool = True (toggle PoA uploads separately - requires show_uploads=True)
       - show_member_roles: bool = False (toggle member role selection)
       - allowed_id_types: list[str] = ["SA ID Number", "Foreign ID Number", "Foreign Passport Number"]
     """
@@ -56,7 +57,8 @@ class NaturalPersonsComponent(SectionComponent):
         n = persist_number_input(f"Number of {role_label.lower()}s", count_key, min_value=0, step=1)
 
         for i in range(st.session_state.get(count_key, 0)):
-            with st.expander(f"{role_label} #{i+1}", expanded=False):
+            st.markdown(f"##### {role_label} #{i+1}")
+            with st.container():
                 
                 # Entity Roles - Natural Persons Field Spec implementation
                 col1, col2 = st.columns(2)
@@ -68,6 +70,7 @@ class NaturalPersonsComponent(SectionComponent):
                     persist_date_input("Date of Birth", 
                         inst_key(ns, instance_id, f"date_of_birth_{i}"),
                         help="Format: YYYY/MM/DD",
+                        min_value=datetime.date(1900, 1, 1),
                         max_value=datetime.date.today() - datetime.timedelta(days=1))
                 
                 with col2:
@@ -126,10 +129,19 @@ class NaturalPersonsComponent(SectionComponent):
                 self._render_role_specific_fields(ns, instance_id, i, config)
 
                 if config.get("show_uploads", True):
+                    # Add friendly message about attachment size limits
+                    st.info("📎 **Document Upload Guidelines**: Please ensure your total attachment size does not exceed 25MB, otherwise the submission may fail.")
+                    
                     persist_file_uploader("ID / Passport Document",
                         inst_key(ns, instance_id, f"id_doc_{i}"))
-                    persist_file_uploader("Proof of Address",
-                        inst_key(ns, instance_id, f"poa_doc_{i}"))
+                    # POA upload can be controlled separately from ID upload
+                    if config.get("show_poa_uploads", True):
+                        persist_file_uploader("Proof of Address",
+                            inst_key(ns, instance_id, f"poa_doc_{i}"))
+                
+                # Add separator between people
+                if i < st.session_state.get(count_key, 0) - 1:
+                    st.markdown("---")
 
     def _render_role_specific_fields(self, ns: str, instance_id: str, i: int, config: dict):
         """Render additional fields based on the role per Entity Roles Rules Specification."""
@@ -160,6 +172,14 @@ class NaturalPersonsComponent(SectionComponent):
                 help="Ownership percentage in the Company (0-100%)")
 
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
+        # Check if development mode is enabled - if so, skip all validation
+        try:
+            from app.utils import is_dev_mode
+            if is_dev_mode():
+                return []  # Return empty list (no errors) when dev mode is enabled
+        except ImportError:
+            pass  # If utils import fails, continue with normal validation
+        
         errs: List[str] = []
         role_label = config.get("role_label", "Person")
         min_count = int(config.get("min_count", 0))
@@ -224,16 +244,36 @@ class NaturalPersonsComponent(SectionComponent):
         uploads: List[Any] = []
         n = st.session_state.get(inst_key(ns, instance_id, "count"), 0)
 
+        # Safety check: if count is 0 or invalid, return empty data
+        if not n or n <= 0:
+            payload = {"Count": 0, "Records": []}
+            return payload, uploads
+
         for i in range(n):
-            exp = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"))
-            dob = st.session_state.get(inst_key(ns, instance_id, f"date_of_birth_{i}"))
+            exp = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"), None)
+            dob = st.session_state.get(inst_key(ns, instance_id, f"date_of_birth_{i}"), None)
+            
+            # Safe date formatting
+            passport_expiry_str = ""
+            if exp and hasattr(exp, 'strftime'):
+                try:
+                    passport_expiry_str = exp.strftime("%Y/%m/%d")
+                except Exception:
+                    passport_expiry_str = str(exp)
+            
+            dob_str = ""
+            if dob and hasattr(dob, 'strftime'):
+                try:
+                    dob_str = dob.strftime("%Y/%m/%d")
+                except Exception:
+                    dob_str = str(dob)
             
             person_data = {
                 # Natural Persons Field Spec core fields
                 "First Name": st.session_state.get(inst_key(ns, instance_id, f"first_name_{i}"), ""),
                 "Surname": st.session_state.get(inst_key(ns, instance_id, f"surname_{i}"), ""),
                 "User ID": st.session_state.get(inst_key(ns, instance_id, f"user_id_{i}"), ""),
-                "Date of Birth": dob.strftime("%Y/%m/%d") if dob else "",
+                "Date of Birth": dob_str,
                 "Country of Residence": st.session_state.get(inst_key(ns, instance_id, f"residence_country_{i}"), ""),
                 
                 # Identification fields
@@ -242,7 +282,7 @@ class NaturalPersonsComponent(SectionComponent):
                 "Foreign ID": st.session_state.get(inst_key(ns, instance_id, f"foreign_id_{i}"), ""),
                 "Passport No": st.session_state.get(inst_key(ns, instance_id, f"passport_no_{i}"), ""),
                 "Passport Country": st.session_state.get(inst_key(ns, instance_id, f"passport_country_{i}"), ""),
-                "Passport Expiry": exp.strftime("%Y/%m/%d") if exp else "",
+                "Passport Expiry": passport_expiry_str,
                 
                 # Contact fields
                 "Email": st.session_state.get(inst_key(ns, instance_id, f"email_{i}"), ""),
@@ -250,7 +290,7 @@ class NaturalPersonsComponent(SectionComponent):
                 
                 # Upload status
                 "ID Doc Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))),
-                "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))),
+                "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))) if config.get("show_poa_uploads", True) else "Not Required",
             }
             
             # Add member role if enabled
@@ -271,10 +311,11 @@ class NaturalPersonsComponent(SectionComponent):
             
             people.append(person_data)
             if config.get("show_uploads", True):
-                uploads.extend([
-                    st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}")),
-                    st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}")),
-                ])
+                # Always include ID document if uploads are enabled
+                uploads.append(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}")))
+                # Only include POA if POA uploads are enabled
+                if config.get("show_poa_uploads", True):
+                    uploads.append(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}")))
 
         payload = {"Count": n, "Records": people}
         return payload, uploads
