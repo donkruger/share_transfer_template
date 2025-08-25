@@ -320,4 +320,117 @@ class NaturalPersonsComponent(SectionComponent):
         payload = {"Count": n, "Records": people}
         return payload, uploads
 
+    def serialize_with_metadata(self, *, ns: str, instance_id: str, 
+                               attachment_collector, 
+                               section_title: str, **config) -> Dict[str, Any]:
+        """Enhanced serialization with proper attachment naming."""
+        
+        role_label = config.get("role_label", "Person")
+        count_key = inst_key(ns, instance_id, "count")
+        n = st.session_state.get(count_key, 0)
+        
+        people = []
+        
+        if not n or n <= 0:
+            return {"Count": 0, "Records": []}
+
+        for i in range(n):
+            # Get person details for identifier
+            first_name = st.session_state.get(inst_key(ns, instance_id, f"first_name_{i}"), "")
+            surname = st.session_state.get(inst_key(ns, instance_id, f"surname_{i}"), "")
+            id_type = st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}"), "")
+            
+            # Create person identifier using the utility function
+            from app.attachment_metadata import create_person_identifier, get_document_type_from_id_type
+            person_identifier = create_person_identifier(first_name, surname, role_label, i + 1)
+            
+            # Get all the person data (reuse existing logic)
+            exp = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"), None)
+            dob = st.session_state.get(inst_key(ns, instance_id, f"date_of_birth_{i}"), None)
+            
+            # Safe date formatting
+            passport_expiry_str = ""
+            if exp and hasattr(exp, 'strftime'):
+                try:
+                    passport_expiry_str = exp.strftime("%Y/%m/%d")
+                except Exception:
+                    passport_expiry_str = str(exp)
+            
+            dob_str = ""
+            if dob and hasattr(dob, 'strftime'):
+                try:
+                    dob_str = dob.strftime("%Y/%m/%d")
+                except Exception:
+                    dob_str = str(dob)
+            
+            person_data = {
+                # Natural Persons Field Spec core fields
+                "First Name": first_name,
+                "Surname": surname,
+                "User ID": st.session_state.get(inst_key(ns, instance_id, f"user_id_{i}"), ""),
+                "Date of Birth": dob_str,
+                "Country of Residence": st.session_state.get(inst_key(ns, instance_id, f"residence_country_{i}"), ""),
+                
+                # Identification fields
+                "ID Type": id_type,
+                "SA ID": st.session_state.get(inst_key(ns, instance_id, f"sa_id_{i}"), ""),
+                "Foreign ID": st.session_state.get(inst_key(ns, instance_id, f"foreign_id_{i}"), ""),
+                "Passport No": st.session_state.get(inst_key(ns, instance_id, f"passport_no_{i}"), ""),
+                "Passport Country": st.session_state.get(inst_key(ns, instance_id, f"passport_country_{i}"), ""),
+                "Passport Expiry": passport_expiry_str,
+                
+                # Contact fields
+                "Email": st.session_state.get(inst_key(ns, instance_id, f"email_{i}"), ""),
+                "Telephone": st.session_state.get(inst_key(ns, instance_id, f"tel_{i}"), ""),
+                
+                # Upload status
+                "ID Doc Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))),
+                "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))) if config.get("show_poa_uploads", True) else "Not Required",
+            }
+            
+            # Add member role if enabled
+            if config.get("show_member_roles", False):
+                person_data["Member Role"] = st.session_state.get(inst_key(ns, instance_id, f"member_role_{i}"), "")
+            
+            # Add role-specific fields per Entity Roles Rules Specification
+            role_label_lower = role_label.lower()
+            if role_label_lower in ["director", "member", "partner"]:
+                person_data["Executive Control"] = st.session_state.get(inst_key(ns, instance_id, f"executive_control_{i}"), "")
+            
+            if role_label_lower == "member":
+                person_data["Member Interest Percentage"] = st.session_state.get(inst_key(ns, instance_id, f"member_interest_{i}"), 0.0)
+            elif role_label_lower == "partner":
+                person_data["Partner Interest"] = st.session_state.get(inst_key(ns, instance_id, f"partner_interest_{i}"), 0.0)
+            elif role_label_lower in ["shareholder", "owner"]:
+                person_data["Percentage Shareholding"] = st.session_state.get(inst_key(ns, instance_id, f"shareholding_{i}"), 0.0)
+            
+            people.append(person_data)
+            
+            # Add attachments with enhanced metadata
+            if config.get("show_uploads", True):
+                # ID Document
+                id_doc = st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))
+                if id_doc:
+                    doc_type = get_document_type_from_id_type(id_type)
+                    attachment_collector.add_attachment(
+                        file=id_doc,
+                        section_title=section_title,
+                        document_type=doc_type,
+                        person_identifier=person_identifier
+                    )
+                
+                # Proof of Address (if enabled)
+                if config.get("show_poa_uploads", True):
+                    poa_doc = st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))
+                    if poa_doc:
+                        attachment_collector.add_attachment(
+                            file=poa_doc,
+                            section_title=section_title,
+                            document_type="Proof_of_Address",
+                            person_identifier=person_identifier
+                        )
+
+        return {"Count": n, "Records": people}
+
+
 # Component will be registered in __init__.py to avoid circular imports

@@ -37,7 +37,17 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
         pdf_name = f"Entity_Onboarding_{safe_entity_name}_{dt}.pdf"
 
         # 1. Send the email with all data and attachments
-        send_submission_email(answers, uploaded_files)
+        # Check if we have enhanced attachment metadata in session state
+        attachment_collector = st.session_state.get('_attachment_collector')
+        if attachment_collector:
+            # Use enhanced email sending
+            from app.email_sender import send_submission_email_with_metadata
+            send_submission_email_with_metadata(answers, attachment_collector)
+            # Clean up session state
+            del st.session_state['_attachment_collector']
+        else:
+            # Fall back to legacy email sending
+            send_submission_email(answers, uploaded_files)
 
         # 2. Generate PDF for download
         try:

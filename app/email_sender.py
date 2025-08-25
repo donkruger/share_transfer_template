@@ -6,19 +6,17 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
-def send_submission_email(
+if TYPE_CHECKING:
+    from app.attachment_metadata import AttachmentCollector
+
+def send_submission_email_with_metadata(
     answers: Dict[str, Any],
-    uploaded_files: List[Optional[st.runtime.uploaded_file_manager.UploadedFile]]
+    attachment_collector: 'AttachmentCollector'
 ):
-    """
-    Constructs and sends an email with the Entity Onboarding form submission data and attachments.
+    """Enhanced email sending with properly named attachments."""
     
-    Args:
-        answers: Complete form submission data including entity details and all sections
-        uploaded_files: List of uploaded documents (ID/Passport copies, proof of address, etc.)
-    """
     try:
         # --- Credentials ---
         try:
@@ -74,6 +72,15 @@ def send_submission_email(
         body += f"• ID/Passport documentation\n"
         body += f"• Proof of address documents\n"
         body += f"• Declaration and signatory information\n\n"
+        
+        # Add enhanced attachment summary
+        attachments = attachment_collector.get_attachments_for_email()
+        if attachments:
+            body += f"Enhanced Attachments ({len(attachments)} files with descriptive names):\n"
+            for att in attachments:
+                body += f"• {att.generate_filename()}\n"
+            body += "\n"
+        
         body += f"Regards,\n"
         body += f"Entity Onboarding System\n"
         body += f"Satrix Asset Management"
@@ -118,15 +125,18 @@ def send_submission_email(
             st.warning(f"⚠️ Could not generate CSV file: {csv_error}")
             # Continue without CSV attachment
 
-        # --- Attach User Uploaded Files ---
-        valid_uploads = [f for f in uploaded_files if f is not None]
-        for uploaded_file in valid_uploads:
+        # --- Attach User Uploaded Files with Enhanced Names ---
+        for attachment_metadata in attachments:
             part = MIMEBase("application", "octet-stream")
-            part.set_payload(uploaded_file.getvalue())
+            part.set_payload(attachment_metadata.file.getvalue())
             encoders.encode_base64(part)
+            
+            # Use enhanced filename
+            enhanced_filename = attachment_metadata.generate_filename()
+            
             part.add_header(
                 "Content-Disposition",
-                f"attachment; filename= {uploaded_file.name}",
+                f"attachment; filename={enhanced_filename}",
             )
             msg.attach(part)
 
@@ -145,9 +155,49 @@ def send_submission_email(
         st.info(f"📧 Email sent to: {recipient_email}")
         st.info(f"📎 PDF Summary: {base_filename}.pdf")
         st.info(f"📊 CSV Data File: {base_filename}.csv")
-        if valid_uploads:
-            st.info(f"📎 Supporting Documents: {len(valid_uploads)} file(s) attached")
+        
+        # Enhanced attachment logging
+        if attachments:
+            st.info(f"📎 Enhanced Attachments: {len(attachments)} file(s) with descriptive names")
+            for att in attachments[:5]:  # Show first 5 for brevity
+                st.info(f"  • {att.generate_filename()}")
+            if len(attachments) > 5:
+                st.info(f"  • ... and {len(attachments) - 5} more")
 
     except Exception as e:
         st.error(f"❌ Failed to send Entity Onboarding submission email: {e}")
         st.error("Please check your email configuration in .streamlit/secrets.toml and try again.")
+
+
+def send_submission_email(
+    answers: Dict[str, Any],
+    uploaded_files: List[Optional[st.runtime.uploaded_file_manager.UploadedFile]]
+):
+    """
+    Backward compatibility wrapper for legacy email sending.
+    
+    Args:
+        answers: Complete form submission data including entity details and all sections
+        uploaded_files: List of uploaded documents (ID/Passport copies, proof of address, etc.)
+    """
+    # Check if answers has an attachment collector (from enhanced serialization)
+    if hasattr(answers, '_attachment_collector'):
+        # Use enhanced email sending
+        attachment_collector = answers._attachment_collector
+        send_submission_email_with_metadata(answers, attachment_collector)
+        return
+    
+    # Create basic attachment collector for legacy calls
+    from app.attachment_metadata import AttachmentCollector
+    attachment_collector = AttachmentCollector()
+    
+    for i, file in enumerate(uploaded_files or []):
+        if file:
+            attachment_collector.add_attachment(
+                file=file,
+                section_title="Legacy_Upload",
+                document_type="Document",
+                person_identifier=f"Upload_{i+1}"
+            )
+    
+    send_submission_email_with_metadata(answers, attachment_collector)

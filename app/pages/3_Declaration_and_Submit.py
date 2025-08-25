@@ -88,7 +88,36 @@ def reconstruct_payload():
             st.markdown(f"- {e}")
         st.stop()
 
-    answers, uploads = serialize_answers(spec, ns)
+    # Use enhanced serialization when available
+    attachment_collector = None
+    try:
+        from app.forms.engine import serialize_answers_with_metadata
+        answers, attachment_collector = serialize_answers_with_metadata(spec, ns)
+        
+        # Get legacy upload list for backward compatibility
+        uploads = attachment_collector.get_legacy_upload_list()
+        
+        # Debug information for development mode
+        try:
+            from app.utils import is_dev_mode
+            if is_dev_mode():
+                st.info(f"🔧 **Enhanced Serialization Active** - {attachment_collector.get_attachment_count()} attachments with metadata")
+                summary = attachment_collector.get_attachment_summary()
+                if summary:
+                    st.info("📎 **Enhanced Attachment Names Preview:**")
+                    for filename in summary[:3]:  # Show first 3
+                        st.info(f"  • {filename}")
+                    if len(summary) > 3:
+                        st.info(f"  • ... and {len(summary) - 3} more")
+        except ImportError:
+            pass
+        
+    except ImportError:
+        # Fallback to traditional serialization
+        from app.forms.engine import serialize_answers
+        answers, uploads = serialize_answers(spec, ns)
+        st.info("ℹ️ Using legacy serialization (enhanced naming not available)")
+    
     # Attach global submission metadata
     answers["Entity User ID"] = st.session_state.get("entity_user_id", "")
     answers["Declaration"] = {
@@ -98,8 +127,13 @@ def reconstruct_payload():
         "Signatory 2 Name": st.session_state.get("s2_name", ""),
         "Signatory 2 Designation": st.session_state.get("s2_desig", ""),
     }
-    return answers, uploads
+    return answers, uploads, attachment_collector
 
 if st.button("Confirm & Submit", use_container_width=True, type="primary"):
-    answers_data, uploaded_files_data = reconstruct_payload()
+    answers_data, uploaded_files_data, attachment_collector = reconstruct_payload()
+    
+    # Store attachment collector in session state for submission handler
+    if attachment_collector:
+        st.session_state['_attachment_collector'] = attachment_collector
+    
     handle_submission(answers_data, uploaded_files_data) 

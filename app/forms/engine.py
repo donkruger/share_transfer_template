@@ -87,7 +87,122 @@ def render_form(spec: FormSpec, ns: str):
                     component_kwargs = {k: v for k, v in sec.component_args.items() if k != "instance_id"}
                     comp.render(ns=ns, instance_id=instance_id, **component_kwargs)
 
+def serialize_answers_with_metadata(spec: FormSpec, ns: str):
+    """Enhanced serialization that returns attachment collector with metadata."""
+    from app.attachment_metadata import AttachmentCollector, sanitize_document_label
+    
+    # Get entity context for attachments
+    entity_name = st.session_state.get("entity_display_name", "")
+    entity_type = spec.title
+    
+    attachment_collector = AttachmentCollector(entity_name, entity_type)
+    answers: Dict[str, Any] = {"Entity Type": spec.title}
+    
+    # Debug information for development mode
+    try:
+        from app.utils import is_dev_mode
+        if is_dev_mode():
+            st.info(f"🔧 **Dev Mode Active** - Enhanced serializing answers for {spec.title}")
+    except ImportError:
+        pass
+    
+    for sec in spec.sections:
+        sec_dict: Dict[str, Any] = {}
+        
+        # Handle simple fields
+        for f in sec.fields:
+            # Skip info fields as they are just display messages
+            if f.kind == "info":
+                continue
+                
+            val = st.session_state.get(ns_key(ns, f.key))
+            
+            if f.kind == "file":
+                # Handle file fields from field helpers (e.g., entity documents)
+                has_files = bool(val) if not f.accept_multiple else bool(val and len(val) > 0)
+                sec_dict[f.label] = has_files
+                
+                if f.accept_multiple and isinstance(val, list):
+                    for file_obj in val:
+                        if file_obj:
+                            attachment_collector.add_attachment(
+                                file=file_obj,
+                                section_title=sec.title,
+                                document_type=sanitize_document_label(f.label),
+                                person_identifier=""
+                            )
+                elif val is not None:
+                    attachment_collector.add_attachment(
+                        file=val,
+                        section_title=sec.title,
+                        document_type=sanitize_document_label(f.label),
+                        person_identifier=""
+                    )
+            else:
+                # Handle non-file fields
+                if f.kind == "date" and val is not None:
+                    try:
+                        sec_dict[f.label] = val.strftime("%Y/%m/%d")
+                    except Exception:
+                        sec_dict[f.label] = val
+                else:
+                    sec_dict[f.label] = val
+
+        # Handle component sections
+        if sec.component_id:
+            comp = get_component(sec.component_id)
+            if comp:
+                instance_id = sec.component_args.get("instance_id") or sec.title.lower().replace(" ", "_")
+                component_kwargs = {k: v for k, v in sec.component_args.items() if k != "instance_id"}
+                
+                try:
+                    # Try enhanced serialization first
+                    if hasattr(comp, 'serialize_with_metadata'):
+                        payload = comp.serialize_with_metadata(
+                            ns=ns, 
+                            instance_id=instance_id, 
+                            attachment_collector=attachment_collector,
+                            section_title=sec.title,
+                            **component_kwargs
+                        )
+                    else:
+                        # Fallback to traditional serialization
+                        payload, comp_uploads = comp.serialize(ns=ns, instance_id=instance_id, **component_kwargs)
+                        # Add uploads with basic metadata
+                        for upload in comp_uploads or []:
+                            if upload:
+                                attachment_collector.add_attachment(
+                                    file=upload,
+                                    section_title=sec.title,
+                                    document_type="Document",
+                                    person_identifier=""
+                                )
+                    
+                    sec_dict.update(payload if isinstance(payload, dict) else {})
+                    
+                except Exception as e:
+                    st.error(f"❌ Error serializing component {sec.component_id}: {e}")
+                    continue
+
+        answers[sec.title] = sec_dict
+
+    return answers, attachment_collector
+
+
 def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any]]:
+    """Traditional serialization for backward compatibility."""
+    try:
+        answers, attachment_collector = serialize_answers_with_metadata(spec, ns)
+        uploads = attachment_collector.get_legacy_upload_list()
+        return answers, uploads
+    except Exception as e:
+        # Fallback to original logic if enhanced serialization fails
+        st.warning(f"Enhanced serialization failed, falling back to legacy: {e}")
+        return _serialize_answers_legacy(spec, ns)
+
+
+def _serialize_answers_legacy(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any]]:
+    """Legacy serialization implementation."""
     answers: Dict[str, Any] = {"Entity Type": spec.title}
     uploads: List[Any] = []
     
@@ -95,7 +210,7 @@ def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any
     try:
         from app.utils import is_dev_mode
         if is_dev_mode():
-            st.info(f"🔧 **Dev Mode Active** - Serializing answers for {spec.title}")
+            st.info(f"🔧 **Dev Mode Active** - Legacy serializing answers for {spec.title}")
     except ImportError:
         pass
     
@@ -133,64 +248,15 @@ def serialize_answers(spec: FormSpec, ns: str) -> Tuple[Dict[str, Any], List[Any
                 instance_id = sec.component_args.get("instance_id") or sec.title.lower().replace(" ", "_")
                 component_kwargs = {k: v for k, v in sec.component_args.items() if k != "instance_id"}
                 
-                # Debug component serialization
                 try:
                     payload, comp_uploads = comp.serialize(ns=ns, instance_id=instance_id, **component_kwargs)
-                    
-                    # Debug information for development mode
-                    try:
-                        from app.utils import is_dev_mode
-                        if is_dev_mode():
-                            st.info(f"🔧 **Dev Mode Active** - Component {sec.component_id} returned: {type(payload).__name__}")
-                            if isinstance(payload, dict):
-                                st.info(f"  Keys: {list(payload.keys())}")
-                            else:
-                                st.warning(f"  ⚠️ Unexpected payload type: {type(payload).__name__}")
-                                st.warning(f"  Content: {str(payload)[:100]}...")
-                    except ImportError:
-                        pass
-                    
-                    # If fields + component should both appear, merge; otherwise replace:
                     sec_dict.update(payload if isinstance(payload, dict) else {})
                     uploads.extend(comp_uploads or [])
-                    
                 except Exception as e:
                     st.error(f"❌ Error serializing component {sec.component_id}: {e}")
-                    # Continue with other components instead of failing completely
                     continue
 
         answers[sec.title] = sec_dict
-    
-    # Debug information for development mode
-    try:
-        from app.utils import is_dev_mode
-        if is_dev_mode():
-            st.info(f"🔧 **Dev Mode Active** - Serialized {len(answers)} sections")
-            st.json({
-                "sections": list(answers.keys()),
-                "total_uploads": len(uploads)
-            })
-            
-            # Show the structure of each section
-            for section_name, section_data in answers.items():
-                st.info(f"Section '{section_name}': {type(section_data).__name__}")
-                if isinstance(section_data, dict):
-                    st.info(f"  Keys: {list(section_data.keys())}")
-                else:
-                    st.warning(f"  ⚠️ Unexpected section data type: {type(section_data).__name__}")
-                    st.warning(f"  Content: {str(section_data)[:100]}...")
-    except ImportError:
-        pass
-    
-    # Safety check: ensure we always return a valid dictionary structure
-    if not isinstance(answers, dict):
-        st.warning(f"⚠️ serialize_answers returned {type(answers).__name__}, converting to dict")
-        answers = {"Entity Type": spec.title, "Error": f"Invalid data type: {type(answers).__name__}"}
-    
-    # Ensure all values in answers are serializable
-    for key, value in list(answers.items()):
-        if not isinstance(value, (dict, list, str, int, float, bool)) and value is not None:
-            answers[key] = str(value)
     
     return answers, uploads
 

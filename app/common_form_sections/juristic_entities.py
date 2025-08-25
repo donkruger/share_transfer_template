@@ -205,4 +205,36 @@ class JuristicEntitiesComponent(SectionComponent):
         return payload, uploads
 
 
+    def serialize_with_metadata(self, *, ns: str, instance_id: str, 
+                               attachment_collector, 
+                               section_title: str, **config) -> Dict[str, Any]:
+        """Enhanced serialization with proper attachment naming."""
+        
+        # Get existing payload (Juristic entities typically don't have file uploads)
+        payload, uploads = self.serialize(ns=ns, instance_id=instance_id, **config)
+        
+        # Juristic entities don't currently have file uploads, but if they do in the future:
+        role_label = config.get("role_label", "Entity")
+        count = st.session_state.get(inst_key(ns, instance_id, "count"), 0)
+        
+        for i in range(count):
+            entity_name = st.session_state.get(inst_key(ns, instance_id, f"entity_name_{i}"), "")
+            entity_identifier = f"{entity_name}_{role_label}_{i+1}" if entity_name else f"{role_label}_{i+1}"
+            
+            # Add any file uploads for this entity (none currently, but prepared for future)
+            # This would be where we'd add entity registration documents if captured
+        
+        # Add any general uploads to the collector
+        for upload in uploads:
+            if upload:
+                attachment_collector.add_attachment(
+                    file=upload,
+                    section_title=section_title,
+                    document_type="Entity_Document",
+                    person_identifier=""
+                )
+        
+        return payload
+
+
 # Component will be registered in __init__.py to avoid circular imports

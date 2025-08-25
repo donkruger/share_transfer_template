@@ -318,5 +318,39 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         
         return data, uploads
 
+    def serialize_with_metadata(self, *, ns: str, instance_id: str, 
+                               attachment_collector, 
+                               section_title: str, **config) -> Dict[str, Any]:
+        """Enhanced serialization with proper attachment naming."""
+        
+        # Get person details for identifier
+        first_name = st.session_state.get(inst_key(ns, instance_id, "first_name"), "")
+        last_name = st.session_state.get(inst_key(ns, instance_id, "last_name"), "")
+        id_type = st.session_state.get(inst_key(ns, instance_id, "id_type"), "")
+        
+        # Create identifier using utility function
+        from app.attachment_metadata import create_person_identifier, get_document_type_from_id_type
+        person_identifier = create_person_identifier(first_name, last_name, "Auth_Rep", 1)
+        
+        # Get existing payload (reuse existing serialization logic)
+        payload, uploads = self.serialize(ns=ns, instance_id=instance_id, **config)
+        
+        # Add attachments with enhanced metadata
+        # Note: Current AuthorisedRepresentativeComponent doesn't have file uploads in the render method,
+        # but this prepares for future enhancement or if uploads are added
+        for upload in uploads:
+            if upload:
+                # Determine document type based on context
+                doc_type = get_document_type_from_id_type(id_type)
+                attachment_collector.add_attachment(
+                    file=upload,
+                    section_title=section_title,
+                    document_type=doc_type,
+                    person_identifier=person_identifier
+                )
+        
+        return payload
+
+
 # Register the component
 # Component will be registered in __init__.py to avoid circular imports
