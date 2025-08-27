@@ -47,47 +47,47 @@ def main():
 
     st.markdown('<h1 class="gradient-title">Juristics ReFICA</h1>', unsafe_allow_html=True)
     
-    # Development Mode Toggle (for testing purposes)
-    with st.expander("🔧 Development Mode", expanded=False):
-        st.markdown("""
-        **Development Mode** allows you to bypass form validation for testing purposes.
-        ⚠️ **Warning**: This should only be used for testing - it will allow submission with incomplete data.
-        """)
-        
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            if st.button("Toggle Dev Mode", type="secondary"):
-                from app.utils import toggle_dev_mode
-                toggle_dev_mode()
-                st.rerun()
-        
-        with col2:
-            from app.utils import is_dev_mode
-            dev_status = "🟢 **ENABLED**" if is_dev_mode() else "🔴 **DISABLED**"
-            st.markdown(f"**Status**: {dev_status}")
-            
-            if is_dev_mode():
-                st.success("✅ Development mode is active. Form validation is disabled.")
-                st.info("💡 You can now test the email engine without filling all required fields.")
-                
-                # Email configuration for dev mode
-                st.markdown("---")
-                st.markdown("**📧 Email Configuration (Dev Mode Only)**")
-                dev_email = st.text_input(
-                    "Recipient Email Address",
-                    value=st.session_state.get("dev_recipient_email", "jpearse@purplegroup.co.za"),
-                    help="Configure the email address where test submissions will be sent. This only applies in development mode.",
-                    key="dev_email_input"
-                )
-                
-                # Update the session state when email changes
-                if dev_email != st.session_state.get("dev_recipient_email"):
-                    st.session_state["dev_recipient_email"] = dev_email
-                    st.success(f"✅ Email updated to: {dev_email}")
-                
-                st.info(f"📧 Test emails will be sent to: **{dev_email}**")
-            else:
-                st.info("ℹ️ Development mode is disabled. All form validation rules apply.")
+    # Development Mode Toggle (for testing purposes) - HIDDEN FROM UI
+    # with st.expander("🔧 Development Mode", expanded=False):
+    #     st.markdown("""
+    #     **Development Mode** allows you to bypass form validation for testing purposes.
+    #     ⚠️ **Warning**: This should only be used for testing - it will allow submission with incomplete data.
+    #     """)
+    #     
+    #     col1, col2 = st.columns([1, 3])
+    #     with col1:
+    #         if st.button("Toggle Dev Mode", type="secondary"):
+    #         from app.utils import toggle_dev_mode
+    #         toggle_dev_mode()
+    #         st.rerun()
+    #     
+    #     with col2:
+    #         from app.utils import is_dev_mode
+    #         dev_status = "🟢 **ENABLED**" if is_dev_mode() else "🔴 **DISABLED**"
+    #         st.markdown(f"**Status**: {dev_status}")
+    #         
+    #         if is_dev_mode():
+    #             st.success("✅ Development mode is active. Form validation is disabled.")
+    #             st.info("💡 You can now test the email engine without filling all required fields.")
+    #             
+    #             # Email configuration for dev mode
+    #             st.markdown("---")
+    #             st.markdown("**📧 Email Configuration (Dev Mode Only)**")
+    #             dev_email = st.text_input(
+    #                 "Recipient Email Address",
+    #                 value=st.session_state.get("dev_recipient_email", "jpearse@purplegroup.co.za"),
+    #                 help="Configure the email address where test submissions will be sent. This only applies in development mode.",
+    #             key="dev_email_input"
+    #             )
+    #             
+    #             # Update the session state when email changes
+    #             if dev_email != st.session_state.get("dev_recipient_email"):
+    #                 st.session_state["dev_recipient_email"] = dev_email
+    #                 st.success(f"✅ Email updated to: {dev_email}")
+    #             
+    #             st.info(f"📧 Test emails will be sent to: **{dev_email}**")
+    #         else:
+    #             st.info("ℹ️ Development mode is disabled. All form validation rules apply.")
     
     # Welcome card with instructions
     st.markdown("""
@@ -132,16 +132,16 @@ def main():
         st.warning("This entity type is not yet configured.")
         return
 
-    # Development Mode Form Indicator
-    try:
-        from app.utils import is_dev_mode
-        if is_dev_mode():
-            st.info("""
-            🔧 **Development Mode Active** - Form validation is disabled for testing purposes.
-            You can now test the email engine without filling all required fields.
-            """)
-    except ImportError:
-        pass
+    # Development Mode Form Indicator - HIDDEN FROM UI
+    # try:
+    #     from app.utils import is_dev_mode
+    #     if is_dev_mode():
+    #         st.info("""
+    #         🔧 **Development Mode Active** - Form validation is disabled for testing purposes.
+    #         You can now test the email engine without filling all required fields.
+    #         """)
+    # except ImportError:
+    #     pass
 
     render_form(spec, ns)
 

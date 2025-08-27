@@ -101,7 +101,7 @@
         },
         "marital_status": {
             "data_type": "string",
-            "required_rule": "always",
+            "required_rule": "optional",
             "ui_control": "select",
             "controlled_list": "marital_status"
         },
@@ -272,6 +272,141 @@
             "required_rule": "always",
             "ui_control": "select",
             "controlled_list": "countries"
+        },
+        "fatca_classification": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "fatca_classifications"
+        },
+        "us_person_type": {
+            "data_type": "string",
+            "required_rule": "if_fatca_us_person",
+            "ui_control": "select",
+            "controlled_list": "us_person_types",
+            "dependencies": {
+                "fatca_classification": "US_PERSON"
+            }
+        },
+        "us_tin": {
+            "data_type": "string",
+            "format_regex": "^[0-9-]{9,11}$",
+            "required_rule": "if_specified_us_person",
+            "ui_control": "input",
+            "validation": "us_tin_format",
+            "dependencies": {
+                "us_person_type": "SPECIFIED_US_PERSON"
+            },
+            "example": "123-45-6789"
+        },
+        "ffi_category": {
+            "data_type": "string",
+            "required_rule": "if_fatca_ffi",
+            "ui_control": "select",
+            "controlled_list": "ffi_categories",
+            "dependencies": {
+                "fatca_classification": "FFI"
+            }
+        },
+        "giin": {
+            "data_type": "string",
+            "format_regex": "^[A-Z0-9]{6}\\.[A-Z0-9]{5}\\.[A-Z0-9]{2}\\.[A-Z0-9]{3}$",
+            "required_rule": "conditional",
+            "ui_control": "input",
+            "validation": "giin_format",
+            "validation_message": "GIIN must be in the format XXXXXX.XXXXX.XX.XXX",
+            "example": "ABCDEF.12345.AB.123"
+        },
+        "is_giin_of_sponsor": {
+            "data_type": "boolean",
+            "required_rule": "if_giin_required",
+            "ui_control": "checkbox"
+        },
+        "sponsor_name": {
+            "data_type": "string",
+            "required_rule": "if_giin_is_sponsor",
+            "ui_control": "input",
+            "dependencies": {
+                "is_giin_of_sponsor": true
+            }
+        },
+        "nffe_type": {
+            "data_type": "string",
+            "required_rule": "if_fatca_nffe",
+            "ui_control": "select",
+            "controlled_list": "nffe_types",
+            "dependencies": {
+                "fatca_classification": "NFFE"
+            }
+        },
+        "crs_classification": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "crs_classifications"
+        },
+        "investment_entity_type": {
+            "data_type": "string",
+            "required_rule": "if_crs_investment_entity",
+            "ui_control": "select",
+            "controlled_list": "investment_entity_types",
+            "dependencies": {
+                "crs_classification": "FI_INVESTMENT_ENTITY"
+            }
+        },
+        "stock_exchange_name": {
+            "data_type": "string",
+            "required_rule": "if_crs_stock_exchange",
+            "ui_control": "input",
+            "dependencies": {
+                "crs_classification": "ACTIVE_NFE_STOCK_EXCHANGE"
+            }
+        },
+        "entity_ticker_symbol": {
+            "data_type": "string",
+            "required_rule": "if_crs_stock_exchange",
+            "ui_control": "input",
+            "dependencies": {
+                "crs_classification": "ACTIVE_NFE_STOCK_EXCHANGE"
+            }
+        },
+        "related_entity_regularly_traded": {
+            "data_type": "boolean",
+            "required_rule": "if_crs_stock_exchange",
+            "ui_control": "checkbox",
+            "dependencies": {
+                "crs_classification": "ACTIVE_NFE_STOCK_EXCHANGE"
+            }
+        },
+        "parent_entity_name": {
+            "data_type": "string",
+            "required_rule": "if_related_entity_yes",
+            "ui_control": "input",
+            "dependencies": {
+                "related_entity_regularly_traded": true
+            }
+        },
+        "parent_entity_stock_exchange": {
+            "data_type": "string",
+            "required_rule": "if_related_entity_yes",
+            "ui_control": "input",
+            "dependencies": {
+                "related_entity_regularly_traded": true
+            }
+        },
+        "tin_option": {
+            "data_type": "string",
+            "required_rule": "always",
+            "ui_control": "select",
+            "controlled_list": "tin_options"
+        },
+        "controlling_person_tin": {
+            "data_type": "string",
+            "required_rule": "if_tin_option_has_tin",
+            "ui_control": "input",
+            "dependencies": {
+                "tin_option": "HAS_TIN"
+            }
         }
     }
 }

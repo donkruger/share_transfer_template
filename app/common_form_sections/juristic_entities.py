@@ -76,6 +76,13 @@ class JuristicEntitiesComponent(SectionComponent):
                 min_value=0.0, max_value=100.0, step=0.01,
                 help=f"Ownership percentage (0-100%)")
         
+        # Country of incorporation for Shareholders
+        if role_label.lower() == "shareholder":
+            persist_selectbox("Country of incorporation",
+                inst_key(ns, instance_id, f"country_of_incorporation_{i}"),
+                options=get_countries(include_empty=True, return_codes=False),
+                help="Country where the shareholder entity was incorporated")
+        
         # Executive Control for Directors and Partners
         if role_label.lower() in ["director", "partner"]:
             persist_selectbox("Executive Control",
@@ -138,6 +145,12 @@ class JuristicEntitiesComponent(SectionComponent):
                 field_name = "Percentage Shareholding" if role_label.lower() == "shareholder" else "Partner Interest"
                 errs.append(f"{prefix}: {field_name} must be between 0% and 100%.")
         
+        # Validate country of incorporation for shareholders
+        if role_label.lower() == "shareholder":
+            country_of_incorporation = st.session_state.get(inst_key(ns, instance_id, f"country_of_incorporation_{i}"), "").strip()
+            if not country_of_incorporation:
+                errs.append(f"{prefix}: Country of incorporation is required.")
+        
         # Validate executive control
         if role_label.lower() in ["director", "partner"]:
             executive_control = st.session_state.get(inst_key(ns, instance_id, f"executive_control_{i}"), "").strip()
@@ -162,6 +175,9 @@ class JuristicEntitiesComponent(SectionComponent):
             # Add role-specific fields
             if role_label.lower() in ["shareholder", "partner"]:
                 entity_data["percentage"] = st.session_state.get(inst_key(ns, instance_id, f"percentage_{i}"), 0.0)
+            
+            if role_label.lower() == "shareholder":
+                entity_data["country_of_incorporation"] = st.session_state.get(inst_key(ns, instance_id, f"country_of_incorporation_{i}"), "")
             
             if role_label.lower() in ["director", "partner"]:
                 entity_data["executive_control"] = st.session_state.get(inst_key(ns, instance_id, f"executive_control_{i}"), "")
@@ -195,6 +211,9 @@ class JuristicEntitiesComponent(SectionComponent):
             if role_lower in ["shareholder", "partner"]:
                 field_name = "Percentage Shareholding" if role_lower == "shareholder" else "Partner Interest"
                 entity_data[field_name] = f"{st.session_state.get(inst_key(ns, instance_id, f'percentage_{i}'), 0.0)}%"
+            
+            if role_lower == "shareholder":
+                entity_data["Country of incorporation"] = st.session_state.get(inst_key(ns, instance_id, f"country_of_incorporation_{i}"), "Not specified")
             
             if role_lower in ["director", "partner"]:
                 entity_data["Executive Control"] = st.session_state.get(inst_key(ns, instance_id, f"executive_control_{i}"), "Not specified")

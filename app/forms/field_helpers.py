@@ -77,7 +77,7 @@ def create_entity_document_upload_fields(entity_type_code: str):
             "📎 **Document Upload Guidelines**", 
             "info", 
             required=False,
-            help_text="Please ensure your total attachment size does not exceed 25MB, otherwise the submission may fail."
+            help_text="Please ensure your total attachment size (across all atachment fields) do not exceed 25MB, otherwise the submission may fail."
         ))
         
         for doc in schema.get("entity_documents", []):

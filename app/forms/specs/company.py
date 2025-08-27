@@ -10,6 +10,22 @@ SPEC = FormSpec(
             fields=create_entity_details_fields()
         ),
         Section(
+            title="FATCA Classification",
+            component_id="fatca_section",
+            component_args={
+                "instance_id": "fatca_info",
+                "title": "FATCA Classification"
+            }
+        ),
+        Section(
+            title="CRS Classification",
+            component_id="crs_section",
+            component_args={
+                "instance_id": "crs_info",
+                "title": "CRS Classification"
+            }
+        ),
+        Section(
             title="Authorised Representative",
             component_id="authorised_representative",
             component_args={
@@ -17,14 +33,7 @@ SPEC = FormSpec(
                 "title": "Authorised Representative"
             }
         ),
-        Section(
-            title="Authorised Representative Address",
-            component_id="address",
-            component_args={
-                "instance_id": "auth_rep_address",
-                "title": "Authorised Representative Address"
-            }
-        ),
+
         Section(
             title="Entity Physical Address",
             component_id="address",

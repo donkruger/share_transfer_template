@@ -12,12 +12,18 @@ def register_component(name: str, component: SectionComponent):
 def get_component(name: str) -> SectionComponent | None:
     return _REGISTRY.get(name)
 
+def get_component_registry() -> Dict[str, SectionComponent]:
+    """Get the complete component registry."""
+    return _REGISTRY.copy()
+
 # Import component modules
 from . import natural_persons
 from . import address
 from . import phone
 from . import authorised_representative
 from . import juristic_entities
+from . import fatca_section
+from . import crs_section
 
 # Register all components (done after imports to avoid circular dependencies)
 register_component("natural_persons", natural_persons.NaturalPersonsComponent())
@@ -25,3 +31,5 @@ register_component("address", address.AddressComponent())
 register_component("phone", phone.PhoneComponent())
 register_component("authorised_representative", authorised_representative.AuthorisedRepresentativeComponent())
 register_component("juristic_entities", juristic_entities.JuristicEntitiesComponent())
+register_component("fatca_section", fatca_section.FatcaSectionComponent())
+register_component("crs_section", crs_section.CrsSectionComponent())

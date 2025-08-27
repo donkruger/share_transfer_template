@@ -200,21 +200,6 @@
             "capture_phase": "PRE_SUBMIT"
         },
         {
-            "entity_type": "ALL",
-            "role_id": null,
-            "document_code": "BANK_STATEMENT",
-            "description": "Recent Bank Statement (3 months)",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 10,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
             "entity_type": "COMPANY",
             "role_id": null,
             "document_code": "INCORPORATION_DOCUMENT",

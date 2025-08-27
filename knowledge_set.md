@@ -309,4 +309,73 @@ If you encounter issues not covered in this guide:
 3. **Check all required fields**: Ensure nothing is left blank that should be completed
 4. **Verify data formats**: Especially for ID numbers, dates, and phone numbers
 
+
+---
+
+## FATCA & CRS Compliance
+
+This section helps you understand the FATCA (Foreign Account Tax Compliance Act) and CRS (Common Reporting Standard) requirements. These are mandatory for legal and tax compliance.
+
+### What are FATCA and CRS?
+Think of them as global tax reporting standards.
+* **FATCA** is a United States law to prevent tax evasion by US citizens and entities using foreign accounts.
+* **CRS** is a global standard for the automatic exchange of financial account information between tax authorities of different countries.
+
+### Why are these sections required?
+As a financial institution, we are legally required to collect this information to identify accounts that may need to be reported to tax authorities like the South African Revenue Service (SARS), which then shares it with other countries' tax authorities.
+
+---
+
+## Understanding the FATCA Classifications
+
+You must choose one of the three main classifications for your entity.
+
+### Section A: US Person
+This is for entities or individuals considered a "United States Person" for tax purposes. This includes:
+* A US citizen or resident.
+* A partnership or corporation organised in the United States.
+
+### Section B: Foreign Financial Institution (FFI)
+This applies if your entity is a **Financial Institution** outside of the US. This typically includes entities that:
+* Accept deposits (like banks).
+* Hold financial assets for others (like brokers or custodians).
+* Are involved in investing, trading, or managing funds (like investment funds or asset managers).
+* Are certain types of insurance companies.
+If you select this, you will be asked for your FFI category and may need a **GIIN**.
+
+### Section C: Non-Financial Foreign Entity (NFFE)
+This is the default category for most non-financial businesses. If your entity is not a US Person and not an FFI, it is an NFFE. There are two main types you will choose from:
+* **Active NFFE**: This is for most standard operating businesses. An entity is generally "Active" if less than 50% of its income is from passive sources (like interest, dividends, rent) and less than 50% of its assets are held for producing passive income. Examples include manufacturers, retailers, consultancies, and restaurants.
+* **Passive NFFE**: This applies to entities where 50% or more of their income is passive. These are typically entities used to hold assets or investments, such as a holding company, family trust, or an investment vehicle that is not classified as an FFI. **If you select this, you MUST provide details for all Controlling Persons.**
+
+---
+
+## Understanding the CRS Classifications
+
+The CRS section is similar to FATCA but has its own categories. You must choose the one that best describes your entity.
+
+### Financial Institution (FI)
+This is similar to the FATCA FFI category. It includes banks, custodians, investment entities, and certain insurance companies.
+
+### Non-Financial Entity (NFE)
+This is for any entity that is not a Financial Institution. Most businesses fall into this category.
+* **Active NFE**: This is for regular operating companies. The definition is similar to the Active NFFE in FATCA. Most active businesses will select this.
+* **Passive NFE**: This is for entities that primarily receive passive income from investments. The definition is similar to the Passive NFFE in FATCA. **If you select this, you MUST provide details for all Controlling Persons.**
+
+---
+
+## Key Terms Explained
+
+* **Controlling Persons**: These are the individuals who ultimately own or exercise control over an entity. For a company, this could be major shareholders. For a trust, it includes trustees, settlors, and beneficiaries. You are required to provide information for these individuals if your entity is classified as a **Passive NFE/NFFE**.
+* **TIN (Tax Identification Number)**: This is the number your entity uses for tax purposes in its country of residence. For South African entities, this is your SARS tax number.
+* **GIIN (Global Intermediary Identification Number)**: This is a unique 19-character ID number used for FATCA reporting. **You will only have a GIIN if your entity is a certain type of Financial Institution (FFI).** If you are an Active or Passive NFFE, you will not have a GIIN.
+
+### Common Questions & Troubleshooting
+* **"Which classification should I choose?"**
+    * This assistant cannot provide tax advice. However, as a general guide: most regular operating businesses (e.g., shops, factories, consultancies) are likely **Active NFEs**. Entities that primarily hold investments (e.g., some family trusts or holding companies) are likely **Passive NFEs**. If you are unsure, please consult a tax professional.
+* **"The form is asking for a GIIN, but I don't have one."**
+    * You only need a GIIN if you are a specific type of Financial Institution (FFI). If you are a standard business (an NFFE), you should not select a category that requires a GIIN. Please review your FATCA Classification to ensure it is correct.
+
+
+
 Remember: This AI Assistant is specifically designed to help with form completion and can provide detailed guidance on any field requirements or validation rules you encounter during the submission process.

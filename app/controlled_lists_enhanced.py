@@ -128,7 +128,7 @@ class ControlledListManager:
             return dial_map
     
     def get_list_options(self, list_name: str, include_empty: bool = True, 
-                        return_codes: bool = False) -> List[str]:
+                        return_codes: bool = False, with_description: bool = False) -> List[str]:
         """
         Get options for a controlled list.
         
@@ -136,6 +136,7 @@ class ControlledListManager:
             list_name: Name of the controlled list
             include_empty: Whether to include empty option
             return_codes: If True, return codes; if False, return labels
+            with_description: If True, combines label and description for display
             
         Returns:
             List of strings (either codes or labels)
@@ -149,9 +150,17 @@ class ControlledListManager:
         active_items = [item for item in items if item.get("is_active", True)]
         active_items.sort(key=lambda x: x.get("sort_order", 999))
         
-        # Extract codes or labels
-        field = "code" if return_codes else "label"
-        options = [item[field] for item in active_items]
+        # Extract codes or labels with optional descriptions
+        if return_codes:
+            options = [item["code"] for item in active_items]
+        else:
+            options = []
+            for item in active_items:
+                if with_description and item.get("description"):
+                    display_text = f"{item['label']} – {item['description']}"
+                    options.append(display_text)
+                else:
+                    options.append(item["label"])
         
         # Handle empty option
         if not include_empty and options and options[0] == "":
@@ -228,6 +237,68 @@ def get_marital_status_options(include_empty: bool = True, return_codes: bool = 
 def get_entity_types(include_empty: bool = False, return_codes: bool = False) -> List[str]:
     """Get Entity Type options."""
     return _controlled_list_manager.get_list_options("entity_types", include_empty, return_codes)
+
+# ===== FATCA CONTROLLED LISTS =====
+
+def get_fatca_classifications(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get FATCA Classification options."""
+    return _controlled_list_manager.get_list_options("fatca_classifications", include_empty, return_codes)
+
+def get_us_person_types(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get US Person Type options."""
+    return _controlled_list_manager.get_list_options("us_person_types", include_empty, return_codes)
+
+def get_ffi_categories(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get FFI Category options."""
+    return _controlled_list_manager.get_list_options("ffi_categories", include_empty, return_codes)
+
+def get_nffe_types(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get NFFE Type options."""
+    return _controlled_list_manager.get_list_options("nffe_types", include_empty, return_codes)
+
+# ===== CRS CONTROLLED LISTS =====
+
+def get_crs_classifications(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get CRS Classification options."""
+    return _controlled_list_manager.get_list_options("crs_classifications", include_empty, return_codes)
+
+def get_investment_entity_types(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get Investment Entity Type options."""
+    return _controlled_list_manager.get_list_options("investment_entity_types", include_empty, return_codes)
+
+def get_tin_options(include_empty: bool = False, return_codes: bool = False) -> List[str]:
+    """Get TIN Options for controlling persons."""
+    return _controlled_list_manager.get_list_options("tin_options", include_empty, return_codes)
+
+# ===== ENHANCED FATCA & CRS FUNCTIONS WITH DESCRIPTIONS =====
+
+def get_fatca_classifications_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get FATCA Classification options with descriptive text."""
+    return _controlled_list_manager.get_list_options("fatca_classifications", include_empty, return_codes=False, with_description=True)
+
+def get_us_person_types_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get US Person Type options with descriptive text."""
+    return _controlled_list_manager.get_list_options("us_person_types", include_empty, return_codes=False, with_description=True)
+
+def get_ffi_categories_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get FFI Category options with descriptive text."""
+    return _controlled_list_manager.get_list_options("ffi_categories", include_empty, return_codes=False, with_description=True)
+
+def get_nffe_types_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get NFFE Type options with descriptive text."""
+    return _controlled_list_manager.get_list_options("nffe_types", include_empty, return_codes=False, with_description=True)
+
+def get_crs_classifications_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get CRS Classification options with descriptive text."""
+    return _controlled_list_manager.get_list_options("crs_classifications", include_empty, return_codes=False, with_description=True)
+
+def get_investment_entity_types_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get Investment Entity Type options with descriptive text."""
+    return _controlled_list_manager.get_list_options("investment_entity_types", include_empty, return_codes=False, with_description=True)
+
+def get_tin_options_with_descriptions(include_empty: bool = False) -> List[str]:
+    """Get TIN Options with descriptive text."""
+    return _controlled_list_manager.get_list_options("tin_options", include_empty, return_codes=False, with_description=True)
 
 def get_countries(include_empty: bool = True, return_codes: bool = False) -> List[str]:
     """Get comprehensive list of Country options with South Africa prioritized."""

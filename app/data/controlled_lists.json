@@ -756,5 +756,201 @@
             "is_active": true,
             "sort_order": 17
         }
+    ],
+    "fatca_classifications": [
+        {
+            "code": "US_PERSON",
+            "label": "Section A: US Person",
+            "description": "US citizens, residents, or entities controlled by US persons",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "FFI",
+            "label": "Section B: Foreign Financial Institution (FFI)",
+            "description": "Banks, investment funds, insurance companies, or other financial entities",
+            "is_active": true,
+            "sort_order": 2
+        },
+        {
+            "code": "NFFE",
+            "label": "Section C: Non-Financial Foreign Entity (NFFE)",
+            "description": "Companies, trusts, partnerships, or other non-financial entities",
+            "is_active": true,
+            "sort_order": 3
+        }
+    ],
+    "us_person_types": [
+        {
+            "code": "SPECIFIED_US_PERSON",
+            "label": "Specified US Person",
+            "description": "US persons required to report under FATCA (individuals, corporations, etc.)",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "NON_SPECIFIED_US_PERSON",
+            "label": "US Person that is not a Specified US Person (exempt – eg. Govt, Charity, Retirement Fund)",
+            "description": "Exempt entities like government agencies, charities, or retirement funds",
+            "is_active": true,
+            "sort_order": 2
+        }
+    ],
+    "ffi_categories": [
+        {
+            "code": "REPORTING_FFI",
+            "label": "Reporting FFI",
+            "description": "An FFI that reports accounts to tax authorities",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "REGISTERED_DEEMED_COMPLIANT",
+            "label": "Registered Deemed-Compliant FFI",
+            "description": "Compliant FFI with a registered GIIN",
+            "is_active": true,
+            "sort_order": 2
+        },
+        {
+            "code": "NON_REPORTING_FFI",
+            "label": "Non-Reporting FFI",
+            "description": "An FFI with a low-risk profile, not required to report",
+            "is_active": true,
+            "sort_order": 3
+        },
+        {
+            "code": "EXEMPT_BENEFICIAL_OWNER",
+            "label": "Exempt Beneficial Owner (institution controlled or wholly owned by a foreign government, central bank, international organisation, participatory retirement fund, government of US territories)",
+            "description": "Government entities, central banks, international organisations",
+            "is_active": true,
+            "sort_order": 4
+        },
+        {
+            "code": "NON_PARTICIPATING_FFI",
+            "label": "Non-Participating FFI",
+            "description": "An FFI that has not agreed to FATCA compliance",
+            "is_active": true,
+            "sort_order": 5
+        },
+        {
+            "code": "CERTIFIED_DEEMED_COMPLIANT",
+            "label": "Certified Deemed-Compliant FFI",
+            "description": "Local banks, certain collective investment vehicles",
+            "is_active": true,
+            "sort_order": 6
+        }
+    ],
+    "nffe_types": [
+        {
+            "code": "ACTIVE_NFFE",
+            "label": "Active NFFE",
+            "description": "A non-financial entity with primarily active business income",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "PASSIVE_NFFE",
+            "label": "Passive NFFE",
+            "description": "A non-financial entity with primarily passive income (requires controlling person details)",
+            "is_active": true,
+            "sort_order": 2
+        },
+        {
+            "code": "DIRECT_REPORTING_NFFE",
+            "label": "Direct-Reporting NFFE",
+            "description": "A non-financial entity that reports directly to tax authorities",
+            "is_active": true,
+            "sort_order": 3
+        }
+    ],
+    "crs_classifications": [
+        {
+            "code": "FI_INVESTMENT_ENTITY",
+            "label": "A. Financial Institution – Investment Entity",
+            "description": "Investment funds, private equity, or hedge funds",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "FI_DEPOSITORY_CUSTODIAL_INSURANCE",
+            "label": "B. Financial Institution - Depository Institutions (eg. Bank, Credit Union), Custodial Institutions or Specified Insurance Companies",
+            "description": "Banks, credit unions, custodians, or insurance companies",
+            "is_active": true,
+            "sort_order": 2
+        },
+        {
+            "code": "NON_REPORTING_FI",
+            "label": "C. Non-Reporting Financial Institution",
+            "description": "Financial institutions not required to report under CRS",
+            "is_active": true,
+            "sort_order": 3
+        },
+        {
+            "code": "ACTIVE_NFE_STOCK_EXCHANGE",
+            "label": "D. Active NFE listed on stock exchange",
+            "description": "Publicly traded companies or related entities",
+            "is_active": true,
+            "sort_order": 4
+        },
+        {
+            "code": "OTHER_ACTIVE_NFE",
+            "label": "E. Other Active NFE",
+            "description": "Other active non-financial entities",
+            "is_active": true,
+            "sort_order": 5
+        },
+        {
+            "code": "PASSIVE_NFE",
+            "label": "F. Passive NFE",
+            "description": "Non-financial entities with passive income (requires controlling person details)",
+            "is_active": true,
+            "sort_order": 6
+        }
+    ],
+    "investment_entity_types": [
+        {
+            "code": "NON_PARTICIPATING_JURISDICTION",
+            "label": "Investment Entity located in a non-participating jurisdiction and managed by another financial institution",
+            "description": "Investment entity in a jurisdiction that doesn't participate in CRS",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "OTHER_INVESTMENT_ENTITY",
+            "label": "Other investment entity",
+            "description": "Other types of investment entities",
+            "is_active": true,
+            "sort_order": 2
+        }
+    ],
+    "tin_options": [
+        {
+            "code": "HAS_TIN",
+            "label": "Controlling Person has a TIN",
+            "description": "The controlling person has a valid tax identification number",
+            "is_active": true,
+            "sort_order": 1
+        },
+        {
+            "code": "NO_TIN_ISSUED",
+            "label": "The country/jurisdiction of tax residence does not issue TINs to its residents",
+            "description": "TINs are not issued by the tax authority in this jurisdiction",
+            "is_active": true,
+            "sort_order": 2
+        },
+        {
+            "code": "NOT_REQUIRED_BY_LAW",
+            "label": "The TIN is not required to be collected by the domestic law of the jurisdiction",
+            "description": "Local law does not require TIN collection for this entity",
+            "is_active": true,
+            "sort_order": 3
+        },
+        {
+            "code": "UNABLE_TO_OBTAIN",
+            "label": "The account holder is unable to obtain a TIN or equivalent",
+            "description": "Unable to obtain TIN despite reasonable efforts",
+            "is_active": true,
+            "sort_order": 4
+        }
     ]
 }

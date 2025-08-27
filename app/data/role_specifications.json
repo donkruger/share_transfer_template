@@ -27,7 +27,7 @@
                 },
                 {
                     "field_name": "marital_status",
-                    "required_rule": "always"
+                    "required_rule": "optional"
                 },
                 {
                     "field_name": "id_type",

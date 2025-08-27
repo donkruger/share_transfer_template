@@ -228,8 +228,7 @@ class AuthorisedRepresentativeComponent(SectionComponent):
         elif date_of_birth >= datetime.date.today() - datetime.timedelta(days=365*18):
             errs.append(f"{prefix} Date of Birth indicates person must be at least 18 years old.")
             
-        if not (st.session_state.get(inst_key(ns, instance_id, "marital_status")) or "").strip():
-            errs.append(f"{prefix} Marital Status is required.")
+# Marital Status is now optional - removed requirement validation
         
         # Identification validation
         id_type = st.session_state.get(inst_key(ns, instance_id, "id_type"), "")
