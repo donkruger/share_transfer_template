@@ -15,31 +15,7 @@ from app.utils import inst_key, persist_text_input, persist_selectbox, persist_n
 from app.controlled_lists_enhanced import get_countries, get_tin_options_with_descriptions, get_member_role_options
 
 
-def _digits_only(s: str) -> str:
-    return re.sub(r"\D", "", s or "")
 
-
-def _luhn_ok(n: str) -> bool:
-    n = _digits_only(n)
-    total, alt = 0, False
-    for d in n[::-1]:
-        d = int(d)
-        if alt:
-            d *= 2
-            if d > 9:
-                d -= 9
-        total += d
-        alt = not alt
-    return total % 10 == 0
-
-
-def _valid_sa_id(n: str) -> bool:
-    n = _digits_only(n)
-    return len(n) == 13 and _luhn_ok(n)
-
-
-def _is_future_date(d: datetime.date | None) -> bool:
-    return bool(d and d > datetime.date.today())
 
 
 class ControllingPersonComponent(SectionComponent):
@@ -102,35 +78,7 @@ class ControllingPersonComponent(SectionComponent):
                         inst_key(ns, instance_id, f"tax_residence_country_{i}"),
                         options=get_countries(include_empty=True, return_codes=False))
 
-                # Identification details
-                st.markdown("**Identification**")
-                id_type = persist_selectbox("Identification Type",
-                    inst_key(ns, instance_id, f"id_type_{i}"),
-                    options=["", "SA ID Number", "Foreign ID Number", "Foreign Passport Number"])
 
-                if id_type == "SA ID Number":
-                    persist_text_input("SA ID Number", 
-                        inst_key(ns, instance_id, f"sa_id_{i}"),
-                        help="13 digits; Luhn validation applied")
-                        
-                elif id_type == "Foreign ID Number":
-                    persist_text_input("Foreign ID Number", 
-                        inst_key(ns, instance_id, f"foreign_id_{i}"))
-                        
-                elif id_type == "Foreign Passport Number":
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        persist_text_input("Passport Number", 
-                            inst_key(ns, instance_id, f"passport_number_{i}"))
-                    with col2:
-                        persist_selectbox("Passport Issue Country",
-                            inst_key(ns, instance_id, f"passport_country_{i}"),
-                            options=get_countries(include_empty=True, return_codes=False))
-                    
-                    persist_date_input("Passport Expiry Date",
-                        inst_key(ns, instance_id, f"passport_expiry_{i}"),
-                        min_value=datetime.date.today() + datetime.timedelta(days=1),
-                        help="Must be a future date")
 
                 # TIN Information (specific to controlling persons)
                 st.markdown("**Tax Identification**")
@@ -245,30 +193,7 @@ class ControllingPersonComponent(SectionComponent):
             if not tax_residence_country:
                 errors.append(f"{prefix} Country of Tax Residence is required.")
 
-            # Identification validation
-            id_type = st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}"), "")
-            if not id_type:
-                errors.append(f"{prefix} Identification Type is required.")
-            elif id_type == "SA ID Number":
-                sa_id = st.session_state.get(inst_key(ns, instance_id, f"sa_id_{i}"), "")
-                if not _valid_sa_id(sa_id):
-                    errors.append(f"{prefix} SA ID Number is invalid.")
-            elif id_type == "Foreign ID Number":
-                foreign_id = (st.session_state.get(inst_key(ns, instance_id, f"foreign_id_{i}")) or "").strip()
-                if not foreign_id:
-                    errors.append(f"{prefix} Foreign ID Number is required.")
-            elif id_type == "Foreign Passport Number":
-                passport_number = (st.session_state.get(inst_key(ns, instance_id, f"passport_number_{i}")) or "").strip()
-                if not passport_number:
-                    errors.append(f"{prefix} Passport Number is required.")
-                
-                passport_country = (st.session_state.get(inst_key(ns, instance_id, f"passport_country_{i}")) or "").strip()
-                if not passport_country:
-                    errors.append(f"{prefix} Passport Issue Country is required.")
-                
-                passport_expiry = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"))
-                if not (passport_expiry and _is_future_date(passport_expiry)):
-                    errors.append(f"{prefix} Passport Expiry must be a future date.")
+
 
             # TIN validation
             tin_option = st.session_state.get(inst_key(ns, instance_id, f"tin_option_{i}"), "")
@@ -321,14 +246,6 @@ class ControllingPersonComponent(SectionComponent):
                     dob_str = dob.strftime("%Y/%m/%d")
                 except Exception:
                     dob_str = str(dob)
-            
-            passport_expiry = st.session_state.get(inst_key(ns, instance_id, f"passport_expiry_{i}"))
-            passport_expiry_str = ""
-            if passport_expiry and hasattr(passport_expiry, 'strftime'):
-                try:
-                    passport_expiry_str = passport_expiry.strftime("%Y/%m/%d")
-                except Exception:
-                    passport_expiry_str = str(passport_expiry)
 
             person_data = {
                 # Basic personal information
@@ -339,13 +256,7 @@ class ControllingPersonComponent(SectionComponent):
                 "Role/Designation": st.session_state.get(inst_key(ns, instance_id, f"member_role_{i}"), ""),
                 "Country of Tax Residence": st.session_state.get(inst_key(ns, instance_id, f"tax_residence_country_{i}"), ""),
                 
-                # Identification details
-                "ID Type": st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}"), ""),
-                "SA ID": st.session_state.get(inst_key(ns, instance_id, f"sa_id_{i}"), ""),
-                "Foreign ID": st.session_state.get(inst_key(ns, instance_id, f"foreign_id_{i}"), ""),
-                "Passport Number": st.session_state.get(inst_key(ns, instance_id, f"passport_number_{i}"), ""),
-                "Passport Country": st.session_state.get(inst_key(ns, instance_id, f"passport_country_{i}"), ""),
-                "Passport Expiry": passport_expiry_str,
+
                 
                 # TIN information
                 "TIN Option": st.session_state.get(inst_key(ns, instance_id, f"tin_option_{i}"), ""),
