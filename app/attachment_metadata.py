@@ -140,34 +140,6 @@ class AttachmentCollector:
 
 # Utility functions for common attachment patterns
 
-def create_person_identifier(first_name: str, last_name: str, role: str, index: int = 1) -> str:
-    """Create a standardized person identifier for attachments."""
-    name_parts = []
-    
-    if first_name and first_name.strip():
-        name_parts.append(first_name.strip())
-    if last_name and last_name.strip():
-        name_parts.append(last_name.strip())
-    
-    if name_parts:
-        name_part = '_'.join(name_parts)
-    else:
-        name_part = f"{role}_{index}"
-    
-    return f"{name_part}_{role}_{index}"
-
-
-def get_document_type_from_id_type(id_type: str) -> str:
-    """Map identification type to document type name."""
-    id_type_mapping = {
-        "SA ID Number": "SA_ID_Document",
-        "Foreign ID Number": "Foreign_ID_Document", 
-        "Foreign Passport Number": "Passport_Document",
-        "": "ID_Document"  # fallback
-    }
-    return id_type_mapping.get(id_type, "ID_Document")
-
-
 def sanitize_document_label(label: str) -> str:
     """Sanitize a document label for use in filename."""
     if not label:
@@ -206,58 +178,6 @@ def sanitize_document_label(label: str) -> str:
 
 
 # Test function for development
-# ===== UTILITY FUNCTIONS =====
-
-def create_person_identifier(first_name: str, surname: str, role_label: str, index: int) -> str:
-    """Create a person identifier for attachment naming."""
-    name_parts = [part for part in [first_name, surname] if part and part.strip()]
-    if name_parts:
-        person_name = "_".join(name_parts)
-        return f"{person_name}_{role_label}_{index}"
-    else:
-        return f"{role_label}_{index}"
-
-
-def get_document_type_from_id_type(id_type: str) -> str:
-    """Map ID type to document type for attachment naming."""
-    id_type_mapping = {
-        "SA ID Number": "SA_ID_Document",
-        "Foreign ID Number": "Foreign_ID_Document", 
-        "Foreign Passport Number": "Passport_Document",
-        "Passport": "Passport_Document"
-    }
-    return id_type_mapping.get(id_type, "ID_Document")
-
-
-def sanitize_document_label(label: str) -> str:
-    """Sanitize document label for use in filename while preserving meaningful content."""
-    if not label:
-        return "Document"
-    
-    # Start with the original label
-    sanitized = label
-    
-    # Replace problematic characters but preserve content in parentheses and other details
-    # Replace forward slashes with underscores
-    sanitized = sanitized.replace('/', '_')
-    # Replace other special characters that are unsafe for filenames
-    sanitized = re.sub(r'[<>:"|*?\\]', '', sanitized)
-    # Replace spaces, hyphens, and periods with underscores
-    sanitized = re.sub(r'[\s\-\.]+', '_', sanitized)
-    # Clean up parentheses - replace with underscores but keep the content
-    sanitized = re.sub(r'[\(\)]', '_', sanitized)
-    # Remove multiple consecutive underscores
-    sanitized = re.sub(r'_+', '_', sanitized)
-    # Remove leading/trailing underscores
-    sanitized = sanitized.strip('_')
-    
-    # Truncate if too long (preserve first 100 characters for readability)
-    if len(sanitized) > 100:
-        sanitized = sanitized[:100].rstrip('_')
-    
-    return sanitized or "Document"
-
-
 def test_attachment_metadata():
     """Test function to validate attachment metadata functionality."""
     import io
