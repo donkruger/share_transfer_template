@@ -25,20 +25,198 @@ st.markdown(GRADIENT_TITLE_CSS, unsafe_allow_html=True)
 st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
 render_sidebar()
 
-# Add logo above title - full width landscape
+# Add enhanced banner with hover effect
 logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "Ownthemarket.png"
 if logo_path.exists():
-    # Display logo across full width for landscape/wide format
-    try:
-        # Try new parameter for newer Streamlit versions
-        st.image(str(logo_path), 
-                use_container_width=True,
-                output_format="PNG")
-    except TypeError:
-        # Fallback to deprecated parameter for older versions
-        st.image(str(logo_path), 
-                use_column_width=True,
-                output_format="PNG")
+    # Enhanced banner with hover effect
+    banner_html = f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css?family=Questrial:400,600,700');
+    
+    .banner-container {{
+        width: 100%;
+        margin: 0 auto 2rem auto;
+        max-width: 100%;
+    }}
+    
+    .snip *,
+    .snip *:before,
+    .snip *:after {{
+        box-sizing: border-box;
+        transition: all 0.45s ease;
+    }}
+
+    .snip {{
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        min-height: 200px;
+        font-family: 'Questrial', sans-serif;
+        color: #fff;
+        font-size: 16px;
+        text-align: left;
+        transform: translateZ(0);
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }}
+
+    .snip:hover .snip__title,
+    .snip:hover .snip__text {{
+        transform: translateY(0);
+        opacity: 1;
+        transition-delay: 0.2s;
+    }}
+
+    .snip::before,
+    .snip::after {{
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #0fbce3 0%, #2c5aa0 100%);
+        opacity: 0.7;
+        transition: all 0.45s ease;
+    }}
+
+    .snip::before {{
+        transform: skew(30deg) translateX(-80%);
+    }}
+
+    .snip::after {{
+        transform: skew(-30deg) translateX(-70%);
+    }}
+
+    .snip:hover::before {{
+        transform: skew(30deg) translateX(-20%);
+        transition-delay: 0.05s;
+    }}
+
+    .snip:hover::after {{
+        transform: skew(-30deg) translateX(-10%);
+    }}
+
+    .snip:hover .snip__figcaption::before {{
+        transform: skew(30deg) translateX(-40%);
+        transition-delay: 0.15s;
+    }}
+
+    .snip:hover .snip__figcaption::after {{
+        transform: skew(-30deg) translateX(-30%);
+        transition-delay: 0.1s;
+    }}
+
+    .snip__image {{
+        backface-visibility: hidden;
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        vertical-align: top;
+    }}
+
+    .snip__figcaption {{
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        z-index: 1;
+        padding: 25px 40% 25px 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }}
+
+    .snip__figcaption::before,
+    .snip__figcaption::after {{
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #0fbce3 0%, #2c5aa0 100%);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        content: "";
+        opacity: 0.8;
+        z-index: -1;
+    }}
+
+    .snip__figcaption::before {{
+        transform: skew(30deg) translateX(-100%);
+    }}
+
+    .snip__figcaption::after {{
+        transform: skew(-30deg) translateX(-90%);
+    }}
+
+    .snip__title,
+    .snip__text {{
+        margin: 0;
+        opacity: 0;
+        letter-spacing: 1px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }}
+
+    .snip__title {{
+        font-family: 'Questrial', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        color: #ffffff;
+    }}
+
+    .snip__text {{
+        font-size: 14px;
+        line-height: 1.4;
+        color: #f0f8ff;
+        font-weight: 400;
+    }}
+
+    @media (max-width: 768px) {{
+        .snip {{
+            min-height: 150px;
+        }}
+        .snip__image {{
+            height: 150px;
+        }}
+        .snip__title {{
+            font-size: 22px;
+        }}
+        .snip__text {{
+            font-size: 12px;
+        }}
+        .snip__figcaption {{
+            padding: 20px 35% 20px 25px;
+        }}
+    }}
+    </style>
+    
+    <div class="banner-container">
+        <figure class="snip">
+            <img class="snip__image" src="data:image/png;base64,{logo_path.read_bytes().hex()}" alt="Entity Onboarding Banner" />
+            <figcaption class="snip__figcaption">
+                <h3 class="snip__title">Congrats, you're almost there!</h3>
+                <p class="snip__text">
+                    Final step: Review your information, accept the declaration, and submit your entity onboarding application.
+                </p>
+            </figcaption>
+        </figure>
+    </div>
+    """
+    
+    # Convert image to base64 for embedding
+    import base64
+    with open(logo_path, "rb") as img_file:
+        img_base64 = base64.b64encode(img_file.read()).decode()
+    
+    # Replace the hex placeholder with actual base64
+    banner_html = banner_html.replace(f"data:image/png;base64,{logo_path.read_bytes().hex()}", f"data:image/png;base64,{img_base64}")
+    
+    st.markdown(banner_html, unsafe_allow_html=True)
 else:
     st.warning("Logo not found at expected path")
 

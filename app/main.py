@@ -91,32 +91,27 @@ def main():
     
     # Welcome card with instructions
     st.markdown("""
-    <div style="
-        background: linear-gradient(135deg, #e8f4fd 0%, #d1e9ff 100%);
-        padding: 1.5rem;
-        border-radius: 15px;
-        border-left: 4px solid #0fbce3;
-        margin: 1rem 0 2rem 0;
-        box-shadow: 0 2px 10px rgba(15, 188, 227, 0.1);
-    ">
-        <h3 style="color: #2c5aa0; margin-top: 0; margin-bottom: 1rem; font-family: 'Questrial', sans-serif;">
-            Getting Started
-        </h3>
-        <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 1rem; font-size: 1rem;">
-            <strong>Welcome to our Entity Onboarding system!</strong> Please follow these simple steps:
-        </p>
-        <ul style="color: #2c5aa0; line-height: 1.8; margin-bottom: 1rem; padding-left: 1.5rem;">
-            <li><strong>Select your entity type</strong> from the dropdown below</li>
-            <li><strong>Enter your Entity User ID</strong> for identification</li>
-            <li><strong>Complete all required fields</strong> in each section (they'll expand as you click them)</li>
+<div style="background: linear-gradient(135deg, #e8f4fd 0%, #d1e9ff 100%); padding: 1.5rem; border-radius: 15px; border-left: 4px solid #0fbce3; margin: 1rem 0 2rem 0; box-shadow: 0 2px 10px rgba(15, 188, 227, 0.1);">
+    <h3 style="color: #2c5aa0; margin-top: 0; margin-bottom: 1rem; font-family: 'Questrial', sans-serif;">Getting Started</h3>
+    <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 1rem; font-size: 1rem;"><strong>Welcome to our Entity Onboarding system!</strong> Please follow these simple steps:</p>
+    <ul style="color: #2c5aa0; line-height: 1.8; margin-bottom: 1.5rem; padding-left: 1.5rem;">
+        <li><strong>Select your entity type</strong> from the dropdown below</li>
+        <li><strong>Enter your Entity User ID</strong> for identification</li>
+        <li><strong>Complete all required fields</strong> in each section (they'll expand as you click them)</li>
+    </ul>
+    <div style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); padding: 1rem; border-radius: 10px; border-left: 3px solid #ff9800; margin: 1rem 0 1.5rem 0; box-shadow: 0 1px 5px rgba(255, 152, 0, 0.1);">
+        <h4 style="color: #e65100; margin-top: 0; margin-bottom: 0.75rem; font-family: 'Questrial', sans-serif; font-size: 1rem;">⚠️ Saving Your Progress</h4>
+        <p style="color: #bf360c; line-height: 1.5; margin-bottom: 0.75rem; font-size: 0.9rem;">Progress is maintained as you navigate between sections.<br><strong>If you refresh or close the page, your progress will be lost, and you will need to start over.</strong></p>
+        <p style="color: #bf360c; line-height: 1.5; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600;">Best practice is to:</p>
+        <ul style="color: #bf360c; line-height: 1.6; margin-bottom: 0.75rem; padding-left: 1.2rem; font-size: 0.9rem;">
+            <li>Consider preparing your information offline first</li>
+            <li>Complete the form in one session to avoid losing captured data</li>
+            <li>Do not refresh or close the tab before completing the form</li>
         </ul>
-        <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 1rem; font-size: 0.95rem;">
-            🤖 <strong>Need help?</strong> Visit the <strong>"AI Assistance"</strong> helper in the left sidebar - our AI agent is trained to answer commonly asked questions and guide you through the process.
-        </p>
-        <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 0; font-size: 0.95rem;">
-            Once you've completed all fields, proceed to the <strong>"Declaration and Submit"</strong> page to accept the declaration and finalize your submission.
-        </p>
     </div>
+    <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 1rem; font-size: 0.95rem;">🤖 <strong>Need help?</strong> Visit the <strong>"AI Assistance"</strong> helper in the left sidebar - our AI agent is trained to answer commonly asked questions and guide you through the process.</p>
+    <p style="color: #2c5aa0; line-height: 1.6; margin-bottom: 0; font-size: 0.95rem;">Once you've completed all fields, proceed to the <strong>"Declaration and Submit"</strong> page to accept the declaration and finalize your submission.</p>
+</div>
     """, unsafe_allow_html=True)
 
     # Entity selector
