@@ -45,6 +45,10 @@ class FatcaSectionComponent(SectionComponent):
         fatca_options = get_fatca_classifications_with_descriptions()
         fatca_codes = ["US_PERSON", "FFI", "NFFE"]
         
+        # Initialize with default if not set
+        if classification_key not in st.session_state:
+            st.session_state[classification_key] = fatca_codes[0]  # Default to first option
+        
         # Use format_func to display rich text while storing the clean code
         classification = persist_selectbox(
             "FATCA Classification",
@@ -54,8 +58,9 @@ class FatcaSectionComponent(SectionComponent):
             help="Select the appropriate FATCA classification for this entity"
         )
         
+        # Now classification should always have a value, but add safety check
         if not classification:
-            return
+            classification = fatca_codes[0]  # Fallback to default
         
         # Conditional rendering based on FATCA Classification
         if classification == "US_PERSON":
@@ -75,6 +80,10 @@ class FatcaSectionComponent(SectionComponent):
         # Get the mapping of codes to their descriptive labels
         us_person_options = get_us_person_types_with_descriptions()
         us_person_codes = ["SPECIFIED_US_PERSON", "NON_SPECIFIED_US_PERSON"]
+        
+        # Initialize with default if not set
+        if us_person_type_key not in st.session_state:
+            st.session_state[us_person_type_key] = us_person_codes[0]  # Default to first option
         
         # Use format_func to display rich text while storing the clean code
         us_person_type = persist_selectbox(
@@ -104,6 +113,10 @@ class FatcaSectionComponent(SectionComponent):
         ffi_options = get_ffi_categories_with_descriptions()
         ffi_codes = ["REPORTING_FFI", "REGISTERED_DEEMED_COMPLIANT", "NON_REPORTING_FFI", "EXEMPT_BENEFICIAL_OWNER", "NON_PARTICIPATING_FFI", "CERTIFIED_DEEMED_COMPLIANT"]
         
+        # Initialize with default if not set
+        if ffi_category_key not in st.session_state:
+            st.session_state[ffi_category_key] = ffi_codes[0]  # Default to first option
+        
         # Use format_func to display rich text while storing the clean code
         ffi_category = persist_selectbox(
             "FFI Category",
@@ -126,6 +139,10 @@ class FatcaSectionComponent(SectionComponent):
         # Get the mapping of codes to their descriptive labels
         nffe_options = get_nffe_types_with_descriptions()
         nffe_codes = ["ACTIVE_NFFE", "PASSIVE_NFFE", "DIRECT_REPORTING_NFFE"]
+        
+        # Initialize with default if not set
+        if nffe_type_key not in st.session_state:
+            st.session_state[nffe_type_key] = nffe_codes[0]  # Default to first option
         
         # Use format_func to display rich text while storing the clean code
         nffe_type = persist_selectbox(

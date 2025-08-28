@@ -43,6 +43,10 @@ class CrsSectionComponent(SectionComponent):
         crs_options = get_crs_classifications_with_descriptions()
         crs_codes = ["FI_INVESTMENT_ENTITY", "FI_DEPOSITORY_CUSTODIAL_INSURANCE", "NON_REPORTING_FI", "ACTIVE_NFE_STOCK_EXCHANGE", "OTHER_ACTIVE_NFE", "PASSIVE_NFE"]
         
+        # Initialize with default if not set
+        if classification_key not in st.session_state:
+            st.session_state[classification_key] = crs_codes[0]  # Default to first option
+        
         # Use format_func to display rich text while storing the clean code
         classification = persist_selectbox(
             "CRS Classification",
@@ -52,8 +56,9 @@ class CrsSectionComponent(SectionComponent):
             help="Select the appropriate CRS classification for this entity"
         )
         
+        # Now classification should always have a value, but add safety check
         if not classification:
-            return
+            classification = crs_codes[0]  # Fallback to default
         
         # Conditional rendering based on CRS Classification
         if classification == "FI_INVESTMENT_ENTITY":
@@ -79,6 +84,10 @@ class CrsSectionComponent(SectionComponent):
         # Get the mapping of codes to their descriptive labels
         investment_options = get_investment_entity_types_with_descriptions()
         investment_codes = ["NON_PARTICIPATING_JURISDICTION", "OTHER_INVESTMENT_ENTITY"]
+        
+        # Initialize with default if not set
+        if investment_entity_type_key not in st.session_state:
+            st.session_state[investment_entity_type_key] = investment_codes[0]  # Default to first option
         
         # Use format_func to display rich text while storing the clean code
         investment_entity_type = persist_selectbox(

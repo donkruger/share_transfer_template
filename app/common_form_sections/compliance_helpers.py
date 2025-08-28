@@ -83,25 +83,22 @@ def render_giin_section(ns: str, instance_id: str, title: str = "GIIN Informatio
 def render_controlling_person_section(ns: str, instance_id: str, 
                                     component_registry, title: str = "Controlling Person Information") -> None:
     """
-    Renders the controlling person section using the natural_persons component.
+    Renders the controlling person section using the dedicated controlling_person component.
     
     Args:
         ns: Entity namespace
         instance_id: Component instance identifier
-        component_registry: Component registry to get natural_persons component
+        component_registry: Component registry to get controlling_person component
         title: Section title for controlling person information
     """
-    st.markdown(f"**{title}**")
-    
-    # Get the natural_persons component
-    cp_component = component_registry.get("natural_persons")
+    # Get the dedicated controlling_person component
+    cp_component = component_registry.get("controlling_person")
     if cp_component:
         cp_instance_id = f"{instance_id}_controlling_persons"
         cp_config = {
+            "title": title,
             "role_label": "Controlling Person",
             "min_count": 1,
-            "show_uploads": True,
-            "show_member_roles": True,
             "help_text": "Complete information for each controlling person as required by FATCA/CRS regulations."
         }
         cp_component.render(ns=ns, instance_id=cp_instance_id, **cp_config)
@@ -117,15 +114,15 @@ def validate_controlling_person_section(ns: str, instance_id: str,
     Args:
         ns: Entity namespace
         instance_id: Component instance identifier
-        component_registry: Component registry to get natural_persons component
+        component_registry: Component registry to get controlling_person component
         
     Returns:
         List[str]: List of validation error messages
     """
     errors = []
     
-    # Get the natural_persons component
-    cp_component = component_registry.get("natural_persons")
+    # Get the dedicated controlling_person component
+    cp_component = component_registry.get("controlling_person")
     if cp_component:
         cp_instance_id = f"{instance_id}_controlling_persons"
         cp_config = {
@@ -147,7 +144,7 @@ def serialize_controlling_person_section(ns: str, instance_id: str,
     Args:
         ns: Entity namespace
         instance_id: Component instance identifier
-        component_registry: Component registry to get natural_persons component
+        component_registry: Component registry to get controlling_person component
         
     Returns:
         tuple[dict, list]: (payload_dict, uploads_list)
@@ -155,13 +152,19 @@ def serialize_controlling_person_section(ns: str, instance_id: str,
     payload = {}
     uploads = []
     
-    # Get the natural_persons component
-    cp_component = component_registry.get("natural_persons")
+    # Get the dedicated controlling_person component
+    cp_component = component_registry.get("controlling_person")
     if cp_component:
         cp_instance_id = f"{instance_id}_controlling_persons"
-        cp_payload, cp_uploads = cp_component.serialize(ns=ns, instance_id=cp_instance_id)
+        cp_config = {
+            "role_label": "Controlling Person",
+            "min_count": 1
+        }
+        cp_payload, cp_uploads = cp_component.serialize(ns=ns, instance_id=cp_instance_id, **cp_config)
         payload["Controlling Persons"] = cp_payload
         uploads.extend(cp_uploads)
+    else:
+        payload["Controlling Persons"] = {"Error": "Component not available"}
     
     return payload, uploads
 
