@@ -134,6 +134,38 @@ and applies the half-second fade-in animation.
 .gradient-title {
     margin-top: 0 !important;
 }
+
+/* Getting Started Card Hover Effects */
+.getting-started-card {
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    cursor: default !important;
+}
+
+.getting-started-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 
+        0 8px 25px rgba(15, 188, 227, 0.2),
+        0 0 20px rgba(15, 188, 227, 0.3),
+        0 0 40px rgba(15, 188, 227, 0.1),
+        0 2px 10px rgba(15, 188, 227, 0.1) !important;
+}
+
+/* Nested warning card hover effect with subtle orange glow */
+.getting-started-card:hover .progress-warning {
+    box-shadow: 
+        0 3px 12px rgba(255, 152, 0, 0.2),
+        0 0 15px rgba(255, 152, 0, 0.15) !important;
+}
+
+/* Smooth transitions for all interactive elements */
+.getting-started-card * {
+    transition: color 0.3s ease !important;
+}
+
+/* Enhanced transition timing for nested warning card */
+.progress-warning {
+    transition: box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
 </style>
 """
 
