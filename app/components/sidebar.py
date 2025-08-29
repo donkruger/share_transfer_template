@@ -18,11 +18,18 @@ def render_sidebar():
     st.markdown(hide_native_nav_css, unsafe_allow_html=True)
     
     # Subtle light-blue sidebar background to replace default grey
+    # Includes dark-mode friendly variant via prefers-color-scheme
     sidebar_bg_css = """
     <style>
-    [data-testid="stSidebar"],
-    [data-testid="stSidebar"] > div:first-child {
+    [data-testid=\"stSidebar\"],
+    [data-testid=\"stSidebar\"] > div:first-child {
         background: linear-gradient(135deg, #f5fbff 0%, #eaf6ff 100%) !important;
+    }
+    @media (prefers-color-scheme: dark) {
+      [data-testid=\"stSidebar\"],
+      [data-testid=\"stSidebar\"] > div:first-child {
+          background: linear-gradient(135deg, rgba(15, 188, 227, 0.10) 0%, rgba(60, 102, 164, 0.10) 100%) !important;
+      }
     }
     </style>
     """
