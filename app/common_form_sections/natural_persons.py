@@ -40,8 +40,7 @@ class NaturalPersonsComponent(SectionComponent):
       - title: str = "Related Natural Persons"
       - role_label: str = "Person"    (used in UI headings)
       - min_count: int = 0            (enforce minimum count)
-      - show_uploads: bool = True     (toggle ID/PoA uploads)
-      - show_poa_uploads: bool = True (toggle PoA uploads separately - requires show_uploads=True)
+      - show_uploads: bool = True     (toggle ID uploads)
       - show_member_roles: bool = False (toggle member role selection)
       - allowed_id_types: list[str] = ["SA ID Number", "Foreign ID Number", "Foreign Passport Number"]
     """
@@ -128,16 +127,11 @@ class NaturalPersonsComponent(SectionComponent):
                 # Role-specific additional fields per Entity Roles Rules Specification
                 self._render_role_specific_fields(ns, instance_id, i, config)
 
-                if config.get("show_uploads", True):
-                    # Add friendly message about attachment size limits
+                if config.get("show_uploads", True) and id_type in ["Foreign ID Number", "Foreign Passport Number"]:
+                    # Add friendly message about attachment size limits (only when uploads are required)
                     st.info("📎 **Document Upload Guidelines**: Please ensure your total attachment size does not exceed 25MB, otherwise the submission may fail.")
-                    
                     persist_file_uploader("ID / Passport Document",
                         inst_key(ns, instance_id, f"id_doc_{i}"))
-                    # POA upload can be controlled separately from ID upload
-                    if config.get("show_poa_uploads", True):
-                        persist_file_uploader("Proof of Address",
-                            inst_key(ns, instance_id, f"poa_doc_{i}"))
                 
                 # Add separator between people
                 if i < st.session_state.get(count_key, 0) - 1:
@@ -288,9 +282,13 @@ class NaturalPersonsComponent(SectionComponent):
                 "Email": st.session_state.get(inst_key(ns, instance_id, f"email_{i}"), ""),
                 "Telephone": st.session_state.get(inst_key(ns, instance_id, f"tel_{i}"), ""),
                 
-                # Upload status
-                "ID Doc Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))),
-                "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))) if config.get("show_poa_uploads", True) else "Not Required",
+                # Upload status (only required for foreign ID/passport)
+                "ID Doc Uploaded": (
+                    bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}")))
+                    if st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}")) in ["Foreign ID Number", "Foreign Passport Number"]
+                    else "Not Required"
+                ),
+                # Proof of Address removed across all journeys
             }
             
             # Add member role if enabled
@@ -310,12 +308,9 @@ class NaturalPersonsComponent(SectionComponent):
                 person_data["Percentage Shareholding"] = st.session_state.get(inst_key(ns, instance_id, f"shareholding_{i}"), 0.0)
             
             people.append(person_data)
-            if config.get("show_uploads", True):
-                # Always include ID document if uploads are enabled
+            if config.get("show_uploads", True) and st.session_state.get(inst_key(ns, instance_id, f"id_type_{i}")) in ["Foreign ID Number", "Foreign Passport Number"]:
+                # Include ID document only for foreign ID/passport
                 uploads.append(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}")))
-                # Only include POA if POA uploads are enabled
-                if config.get("show_poa_uploads", True):
-                    uploads.append(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}")))
 
         payload = {"Count": n, "Records": people}
         return payload, uploads
@@ -383,9 +378,13 @@ class NaturalPersonsComponent(SectionComponent):
                 "Email": st.session_state.get(inst_key(ns, instance_id, f"email_{i}"), ""),
                 "Telephone": st.session_state.get(inst_key(ns, instance_id, f"tel_{i}"), ""),
                 
-                # Upload status
-                "ID Doc Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))),
-                "PoA Uploaded": bool(st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))) if config.get("show_poa_uploads", True) else "Not Required",
+                # Upload status (only required for foreign ID/passport)
+                "ID Doc Uploaded": (
+                    bool(st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}")))
+                    if id_type in ["Foreign ID Number", "Foreign Passport Number"]
+                    else "Not Required"
+                ),
+                # Proof of Address removed across all journeys
             }
             
             # Add member role if enabled
@@ -407,8 +406,8 @@ class NaturalPersonsComponent(SectionComponent):
             people.append(person_data)
             
             # Add attachments with enhanced metadata
-            if config.get("show_uploads", True):
-                # ID Document
+            if config.get("show_uploads", True) and id_type in ["Foreign ID Number", "Foreign Passport Number"]:
+                # ID Document (only for foreign ID/passport)
                 id_doc = st.session_state.get(inst_key(ns, instance_id, f"id_doc_{i}"))
                 if id_doc:
                     doc_type = get_document_type_from_id_type(id_type)
@@ -418,17 +417,6 @@ class NaturalPersonsComponent(SectionComponent):
                         document_type=doc_type,
                         person_identifier=person_identifier
                     )
-                
-                # Proof of Address (if enabled)
-                if config.get("show_poa_uploads", True):
-                    poa_doc = st.session_state.get(inst_key(ns, instance_id, f"poa_doc_{i}"))
-                    if poa_doc:
-                        attachment_collector.add_attachment(
-                            file=poa_doc,
-                            section_title=section_title,
-                            document_type="Proof_of_Address",
-                            person_identifier=person_identifier
-                        )
 
         return {"Count": n, "Records": people}
 

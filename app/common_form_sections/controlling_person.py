@@ -39,7 +39,14 @@ class ControllingPersonComponent(SectionComponent):
         
         st.subheader(title)
         if help_text:
-            st.info(help_text)
+            st.markdown(
+                f"""
+<div class="callout-info">
+  <p>{help_text}</p>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
         
         count_key = inst_key(ns, instance_id, "count")
         n = persist_number_input(f"Number of {role_label.lower()}s", count_key, min_value=0, step=1)

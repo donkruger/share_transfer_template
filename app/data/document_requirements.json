@@ -17,40 +17,9 @@
         },
         {
             "entity_type": "COMPANY",
-            "role_id": "DIRECTOR",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Director Proof of Address",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
-            "entity_type": "COMPANY",
             "role_id": "BENEFICIAL_OWNER",
             "document_code": "ID_DOCUMENT",
             "description": "Beneficial Owner ID Document / Passport",
-            "required_rule": "CONDITIONAL",
-            "condition": "if_beneficial_owner_exists",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
-            "entity_type": "COMPANY",
-            "role_id": "BENEFICIAL_OWNER",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Beneficial Owner Proof of Address",
             "required_rule": "CONDITIONAL",
             "condition": "if_beneficial_owner_exists",
             "accepted_formats": [
@@ -95,40 +64,10 @@
             "capture_phase": "PRE_SUBMIT"
         },
         {
-            "entity_type": "TRUST",
-            "role_id": "TRUSTEE",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Trustee Proof of Address",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
             "entity_type": "PARTNERSHIP",
             "role_id": "PARTNER",
             "document_code": "ID_DOCUMENT",
             "description": "Partner ID Document / Passport",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
-            "entity_type": "PARTNERSHIP",
-            "role_id": "PARTNER",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Partner Proof of Address",
             "required_rule": "REQUIRED",
             "accepted_formats": [
                 "pdf",
@@ -155,40 +94,10 @@
             "capture_phase": "PRE_SUBMIT"
         },
         {
-            "entity_type": "CLOSED_CORPORATION",
-            "role_id": "MEMBER",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Member Proof of Address",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
             "entity_type": "ALL",
             "role_id": "AUTHORISED_REPRESENTATIVE",
             "document_code": "ID_DOCUMENT",
             "description": "Authorised Representative ID Document / Passport",
-            "required_rule": "REQUIRED",
-            "accepted_formats": [
-                "pdf",
-                "jpg",
-                "jpeg",
-                "png"
-            ],
-            "max_size_mb": 5,
-            "capture_phase": "PRE_SUBMIT"
-        },
-        {
-            "entity_type": "ALL",
-            "role_id": "AUTHORISED_REPRESENTATIVE",
-            "document_code": "PROOF_OF_ADDRESS",
-            "description": "Authorised Representative Proof of Address",
             "required_rule": "REQUIRED",
             "accepted_formats": [
                 "pdf",

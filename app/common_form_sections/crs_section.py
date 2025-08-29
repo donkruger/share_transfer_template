@@ -164,17 +164,38 @@ class CrsSectionComponent(SectionComponent):
     def _render_depository_custodial_insurance_section(self, ns: str, instance_id: str) -> None:
         """Render Depository/Custodial/Insurance Institution specific fields."""
         st.markdown("**Depository/Custodial/Insurance Institution Details**")
-        st.info("This classification requires no additional fields beyond the basic CRS classification.")
+        st.markdown(
+            """
+<div class="callout-info">
+  <p>This classification requires no additional fields beyond the basic CRS classification.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
     
     def _render_non_reporting_fi_section(self, ns: str, instance_id: str) -> None:
         """Render Non-Reporting Financial Institution specific fields."""
         st.markdown("**Non-Reporting Financial Institution Details**")
-        st.info("This classification requires no additional fields beyond the basic CRS classification.")
+        st.markdown(
+            """
+<div class="callout-info">
+  <p>This classification requires no additional fields beyond the basic CRS classification.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
     
     def _render_other_active_nfe_section(self, ns: str, instance_id: str) -> None:
         """Render Other Active NFE specific fields."""
         st.markdown("**Other Active NFE Details**")
-        st.info("This classification requires no additional fields beyond the basic CRS classification.")
+        st.markdown(
+            """
+<div class="callout-info">
+  <p>This classification requires no additional fields beyond the basic CRS classification.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
     
     def validate(self, *, ns: str, instance_id: str, **config) -> List[str]:
         """Validate CRS section data."""

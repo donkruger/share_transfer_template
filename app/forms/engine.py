@@ -61,12 +61,16 @@ def _render_field(ns: str, f: Field):
         return persist_date_input(f.label, k, **kwargs)
     if f.kind == "checkbox": return persist_checkbox(f.label, k)
     if f.kind == "file":     return persist_file_uploader(f.label, k, accept_multiple_files=f.accept_multiple)
-    if f.kind == "info":     
-        # Display info message with help text if available
+    if f.kind == "info":
+        # Display branded callout aligned with Getting Started styling
+        content = f"<p><strong>{f.label}</strong></p>" if f.label else ""
         if f.help_text:
-            st.info(f"{f.label}\n\n{f.help_text}")
-        else:
-            st.info(f.label)
+            content += f"<p>{f.help_text}</p>"
+        if not content:
+            content = "<p></p>"
+        st.markdown(f"""
+<div class=\"callout-info\">{content}</div>
+        """, unsafe_allow_html=True)
         return
     st.info(f"Unsupported field kind '{f.kind}' for {f.label}")
 

@@ -82,20 +82,20 @@ if logo_path.exists():
     }}
 
     .snip::before {{
-        transform: skew(30deg) translateX(-80%);
+        transform: skew(30deg) translateX(-65%);
     }}
 
     .snip::after {{
-        transform: skew(-30deg) translateX(-70%);
+        transform: skew(-30deg) translateX(-55%);
     }}
 
     .snip:hover::before {{
-        transform: skew(30deg) translateX(-20%);
+        transform: skew(30deg) translateX(-12%);
         transition-delay: 0.05s;
     }}
 
     .snip:hover::after {{
-        transform: skew(-30deg) translateX(-10%);
+        transform: skew(-30deg) translateX(-6%);
     }}
 
     .snip:hover .snip__figcaption::before {{
@@ -123,7 +123,7 @@ if logo_path.exists():
         left: 0px;
         right: 0px;
         z-index: 1;
-        padding: 25px 40% 25px 30px;
+        padding: 20px 28% 20px 12px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -144,11 +144,11 @@ if logo_path.exists():
     }}
 
     .snip__figcaption::before {{
-        transform: skew(30deg) translateX(-100%);
+        transform: skew(30deg) translateX(-85%);
     }}
 
     .snip__figcaption::after {{
-        transform: skew(-30deg) translateX(-90%);
+        transform: skew(-30deg) translateX(-75%);
     }}
 
     .snip__title,
@@ -190,7 +190,7 @@ if logo_path.exists():
             font-size: 12px;
         }}
         .snip__figcaption {{
-            padding: 20px 35% 20px 25px;
+            padding: 16px 24% 16px 10px;
         }}
     }}
     </style>

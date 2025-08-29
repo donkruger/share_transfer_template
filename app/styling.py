@@ -162,6 +162,41 @@ and applies the half-second fade-in animation.
     transition: color 0.3s ease !important;
 }
 
+/* Reusable callouts aligned with Getting Started warning */
+.callout-warning {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%) !important;
+    padding: 1rem !important;
+    border-radius: 10px !important;
+    border-left: 3px solid #ff9800 !important;
+    margin: 0.5rem 0 1rem 0 !important;
+    box-shadow: 0 1px 5px rgba(255, 152, 0, 0.1) !important;
+}
+
+.callout-warning h4,
+.callout-warning p,
+.callout-warning li {
+    color: #bf360c !important;
+}
+
+.callout-warning:hover {
+    box-shadow: 0 3px 12px rgba(255, 152, 0, 0.15) !important;
+}
+
+.callout-info {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d1e9ff 100%) !important;
+    padding: 1rem !important;
+    border-radius: 10px !important;
+    border-left: 3px solid #0fbce3 !important;
+    margin: 0.5rem 0 1rem 0 !important;
+    box-shadow: 0 1px 5px rgba(15, 188, 227, 0.1) !important;
+}
+
+.callout-info h4,
+.callout-info p,
+.callout-info li {
+    color: #2c5aa0 !important;
+}
+
 /* Enhanced transition timing for nested warning card */
 .progress-warning {
     transition: box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;

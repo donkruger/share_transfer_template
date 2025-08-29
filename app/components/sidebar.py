@@ -17,6 +17,17 @@ def render_sidebar():
     """
     st.markdown(hide_native_nav_css, unsafe_allow_html=True)
     
+    # Subtle light-blue sidebar background to replace default grey
+    sidebar_bg_css = """
+    <style>
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"] > div:first-child {
+        background: linear-gradient(135deg, #f5fbff 0%, #eaf6ff 100%) !important;
+    }
+    </style>
+    """
+    st.markdown(sidebar_bg_css, unsafe_allow_html=True)
+    
     with st.sidebar:
         # Logo at the top of sidebar
         logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "stx_svg.svg"

@@ -59,6 +59,17 @@ def render_giin_section(ns: str, instance_id: str, title: str = "GIIN Informatio
     """
     st.markdown(f"**{title}**")
     
+    # Introductory callout aligned with Getting Started styling
+    st.markdown(
+        """
+<div class="callout-info">
+  <p><strong>Complete information for each controlling person as required by FATCA/CRS regulations.</strong></p>
+  <p>Provide accurate details to avoid delays in processing.</p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # GIIN field
     giin_key = inst_key(ns, instance_id, "giin")
     persist_text_input(

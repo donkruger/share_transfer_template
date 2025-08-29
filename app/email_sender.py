@@ -70,7 +70,6 @@ def send_submission_email_with_metadata(
         body += f"• Contact information\n"
         body += f"• Natural persons information (Directors, Members, Trustees, etc.)\n"
         body += f"• ID/Passport documentation\n"
-        body += f"• Proof of address documents\n"
         body += f"• Declaration and signatory information\n\n"
         
         # Add enhanced attachment summary
@@ -178,7 +177,7 @@ def send_submission_email(
     
     Args:
         answers: Complete form submission data including entity details and all sections
-        uploaded_files: List of uploaded documents (ID/Passport copies, proof of address, etc.)
+        uploaded_files: List of uploaded documents (ID/Passport copies, etc.)
     """
     # Check if answers has an attachment collector (from enhanced serialization)
     if hasattr(answers, '_attachment_collector'):
