@@ -11,9 +11,21 @@ from typing import List, Dict, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from app.attachment_metadata import AttachmentCollector
 
+def format_feedback_section(feedback_data: Dict[str, Any]) -> str:
+    """Format feedback data for email inclusion."""
+    section = "--- USER FEEDBACK ---\n"
+    section += f"Entity: {feedback_data.get('entity_name', 'N/A')}\n"
+    section += f"Email: {feedback_data.get('email', 'N/A')}\n"
+    section += f"Category: {feedback_data.get('category', 'N/A')}\n"
+    section += f"Satisfaction: {feedback_data.get('satisfaction_rating', 'N/A')}/5\n"
+    section += f"Message: {feedback_data.get('message', 'N/A')}\n"
+    section += "--- END FEEDBACK ---\n\n"
+    return section
+
 def send_submission_email_with_metadata(
     answers: Dict[str, Any],
-    attachment_collector: 'AttachmentCollector'
+    attachment_collector: 'AttachmentCollector',
+    feedback_data: Optional[Dict[str, Any]] = None
 ):
     """Enhanced email sending with properly named attachments."""
     
@@ -79,6 +91,10 @@ def send_submission_email_with_metadata(
             for att in attachments:
                 body += f"• {att.generate_filename()}\n"
             body += "\n"
+        
+        # Add feedback section if provided
+        if feedback_data and feedback_data.get('submitted'):
+            body += format_feedback_section(feedback_data)
         
         body += f"Regards,\n"
         body += f"Entity Onboarding System\n"

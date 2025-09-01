@@ -40,11 +40,17 @@ def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.
         # Check if we have enhanced attachment metadata in session state
         attachment_collector = st.session_state.get('_attachment_collector')
         if attachment_collector:
-            # Use enhanced email sending
+            # Get feedback data from session state
+            feedback_data = st.session_state.get('feedback_data')
+            
+            # Use enhanced email sending WITH feedback
             from app.email_sender import send_submission_email_with_metadata
-            send_submission_email_with_metadata(answers, attachment_collector)
+            send_submission_email_with_metadata(answers, attachment_collector, feedback_data)
+            
             # Clean up session state
             del st.session_state['_attachment_collector']
+            if feedback_data and 'feedback_data' in st.session_state:
+                del st.session_state['feedback_data']
         else:
             # Fall back to legacy email sending
             send_submission_email(answers, uploaded_files)

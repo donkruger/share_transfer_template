@@ -201,6 +201,8 @@ and applies the half-second fade-in animation.
 .progress-warning {
     transition: box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
+
+/* Feedback Component - Simple dropdown styling integrated with project theme */
 </style>
 """
 

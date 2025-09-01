@@ -35,8 +35,9 @@ if logo_path.exists():
     
     .banner-container {{
         width: 100%;
-        margin: 0 auto 2rem auto;
+        margin: 0 0 2rem 0;
         max-width: 100%;
+        padding-left: 0;
     }}
     
     .snip *,
@@ -59,6 +60,8 @@ if logo_path.exists():
         transform: translateZ(0);
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin: 0;
+        padding: 0;
     }}
 
     .snip:hover .snip__title,
@@ -249,6 +252,19 @@ with cols[1]:
     persist_text_input("Signatory #2 – Designation (optional)", "s2_desig")
 
 st.markdown("---")
+
+# FEEDBACK COMPONENT INTEGRATION
+from app.components.feedback import render_feedback_component
+feedback_data = render_feedback_component()
+
+# Store feedback in session state for submission handler
+if feedback_data:
+    st.session_state['feedback_data'] = feedback_data
+else:
+    # Clear feedback data if user removed all feedback content
+    if 'feedback_data' in st.session_state:
+        del st.session_state['feedback_data']
+
 st.subheader("Final Submission")
 
 def reconstruct_payload():
