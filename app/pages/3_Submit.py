@@ -1,4 +1,4 @@
-# app/pages/2_Submit.py
+# app/pages/3_Submit.py
 
 import streamlit as st
 import sys
@@ -15,11 +15,12 @@ st.set_page_config(
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from app.components.sidebar import render_sidebar
-from app.components.submission import handle_search_results_submission
+from app.components.submission import handle_search_results_submission, handle_portfolio_submission
 from app.components.result_display import ResultDisplayComponent
 from app.components.feedback import render_feedback_component
 from app.search.wallet_filter import WalletFilterEngine
 from app.services.selection_manager import SelectionManager
+from app.services.portfolio_service import PortfolioService
 from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, SIDEBAR_GRADIENT_CSS
 from app.utils import initialize_state
 
@@ -111,6 +112,38 @@ if selection_summary['total_count'] > 0:
         if selection_summary.get('oldest_selection'):
             oldest = selection_summary['oldest_selection'][:10]  # Date only
             st.metric("Selection Period", f"Since {oldest}")
+
+# Portfolio Configuration Status
+st.markdown("---")
+st.markdown("### Portfolio Configuration Status")
+
+portfolio_complete = PortfolioService.is_portfolio_complete()
+share_transfer_data = []
+
+if selected_instruments:
+    if portfolio_complete:
+        st.success("Portfolio configuration is complete!")
+        
+        # Show share transfer summary
+        share_transfer_data = PortfolioService.generate_share_transfer_data()
+        st.info(f"{len(share_transfer_data)} portfolio entries configured for share transfer")
+        
+        # Portfolio summary table
+        if st.checkbox("Show Portfolio Summary", value=False):
+            import pandas as pd
+            portfolio_df = pd.DataFrame(share_transfer_data)
+            st.dataframe(portfolio_df, use_container_width=True)
+    else:
+        portfolio_entries = PortfolioService.get_all_portfolio_entries()
+        completed_count = len([k for k in portfolio_entries.keys() 
+                              if str(k) in [str(inst.get('instrument_id')) for inst in selected_instruments]])
+        remaining = len(selected_instruments) - completed_count
+        
+        st.warning(f"Portfolio configuration incomplete: {remaining} instrument(s) need configuration")
+        st.info("Visit the 'My Portfolio' page to complete your portfolio configuration")
+        
+        if st.button("Configure Portfolio", type="primary", use_container_width=True):
+            st.switch_page("pages/2_Portfolio.py")
 
 # Display selected instruments for review
 st.markdown(f"### Selected Instruments ({len(selected_instruments)})")
@@ -245,16 +278,26 @@ if st.button("Submit Search Results",
         "declaration_accepted": declaration_accepted
     }
     
-    # Handle the submission
+    # Handle the submission with enhanced functionality
     try:
-        handle_search_results_submission(
-            selected_instruments=selected_instruments,
-            user_info=user_info,
-            submission_notes=submission_notes
-        )
+        if portfolio_complete:
+            # Use enhanced submission with share transfer data
+            handle_portfolio_submission(
+                selected_instruments=selected_instruments,
+                user_info=user_info,
+                submission_notes=submission_notes
+            )
+        else:
+            # Use standard submission for backward compatibility
+            handle_search_results_submission(
+                selected_instruments=selected_instruments,
+                user_info=user_info,
+                submission_notes=submission_notes
+            )
         
-        # Clear the selected instruments after successful submission using SelectionManager
+        # Clear selections and portfolio data after successful submission
         SelectionManager.clear_selections(confirm=True)
+        PortfolioService.clear_portfolio_data()
         
         # Success actions
         st.markdown("### Submission Successful!")

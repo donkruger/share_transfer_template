@@ -29,7 +29,7 @@ def get_favicon_path() -> str:
 favicon_path_str = get_favicon_path()
 st.set_page_config(
     page_title="AI Assistance - Smart Instrument Finder",
-    page_icon=favicon_path_str if favicon_path_str else "🤖",
+    page_icon=favicon_path_str if favicon_path_str else "AI",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -100,7 +100,7 @@ def get_user_avatar_path():
         return str(profile_path)
     else:
         # Fallback to emoji if file doesn't exist
-        return "👤"
+        return "User"
 
 # --- KNOWLEDGE BASE LOADING ---
 def load_knowledge_base():

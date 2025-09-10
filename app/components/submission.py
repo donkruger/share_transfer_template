@@ -133,6 +133,233 @@ def generate_instruments_csv(instruments: List[Dict]) -> str:
     return output.getvalue()
 
 
+def handle_portfolio_submission(
+    selected_instruments: List[Dict], 
+    user_info: Dict, 
+    submission_notes: str
+) -> None:
+    """
+    Enhanced submission handler following existing submission.py patterns.
+    Generates both instrument CSV and share transfer CSV with existing email flow.
+    """
+    from app.services.portfolio_service import PortfolioService
+    import pandas as pd
+    import io
+    
+    try:
+        with st.spinner("Processing portfolio submission..."):
+            user_name = user_info.get("user_name", "Unknown User")
+            dt = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+            safe_user_name = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+            
+            # Create submission data following existing structure
+            submission_data = {
+                "user_info": user_info,
+                "search_context": {
+                    "wallet": st.session_state.get("selected_wallet", "Unknown"),
+                    "wallet_id": st.session_state.get("selected_wallet_id", ""),
+                    "search_history": st.session_state.get("search_history", [])
+                },
+                "selected_instruments": selected_instruments,
+                "submission_notes": submission_notes,
+                "portfolio_data": PortfolioService.get_all_portfolio_entries(),
+                "submission_timestamp": datetime.datetime.now().isoformat()
+            }
+            
+            # Generate share transfer CSV data
+            share_transfer_data = PortfolioService.generate_share_transfer_data()
+            
+            # Send enhanced email using existing email patterns
+            send_portfolio_submission_email(submission_data, share_transfer_data)
+            
+            # Generate PDF using existing infrastructure
+            pdf_bytes = make_pdf(submission_data)
+            
+        # Success feedback using existing pattern
+        st.success(f"Portfolio submission for **{user_name}** processed successfully!")
+        st.balloons()
+
+        # Download section using existing patterns
+        if pdf_bytes:
+            st.markdown("### Download Your Results")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.download_button(
+                    label="Download PDF Report",
+                    data=pdf_bytes,
+                    file_name=f"Portfolio_Report_{safe_user_name}_{dt}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            
+            with col2:
+                # Generate regular instruments CSV using existing function
+                instruments_csv = generate_instruments_csv(selected_instruments)
+                st.download_button(
+                    label="Download Instruments CSV",
+                    data=instruments_csv,
+                    file_name=f"Instruments_{safe_user_name}_{dt}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            
+            with col3:
+                # Generate share transfer CSV in exact target format
+                share_transfer_csv = generate_share_transfer_csv(share_transfer_data)
+                st.download_button(
+                    label="Download Share Transfer CSV",
+                    data=share_transfer_csv,
+                    file_name=f"ShareTransfer_{safe_user_name}_{dt}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+
+    except Exception as e:
+        st.error(f"Portfolio submission failed: {str(e)}")
+        st.info("Please try again or contact support if the issue persists.")
+
+def generate_share_transfer_csv(share_transfer_data: List[Dict]) -> str:
+    """Generate CSV content in exact target format using existing CSV patterns."""
+    if not share_transfer_data:
+        return ""
+    
+    import csv
+    import io
+    
+    output = io.StringIO()
+    
+    # Exact column order from target CSV format
+    fieldnames = [
+        'SX/EE', 'User ID ', 'TrustAccountID', 'ShareCode', 'InstrumentID',
+        'Qty', 'Base Cost ©', 'Excel Date', 'SettlementDate', 'Last Price',
+        'BrokerID_From', 'BrokerID_To', 'Reference', '', ' '
+    ]
+    
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    
+    for record in share_transfer_data:
+        writer.writerow(record)
+    
+    return output.getvalue()
+
+def send_portfolio_submission_email(submission_data: Dict, share_transfer_data: List[Dict]) -> None:
+    """
+    Send portfolio submission email following existing email_sender.py patterns.
+    """
+    try:
+        # Use existing email credentials pattern
+        sender_email = st.secrets["email_credentials"]["email_address"]
+        sender_password = st.secrets["email_credentials"]["app_password"]
+        
+        # Use existing dev mode pattern from email_sender.py
+        if st.session_state.get("dev_mode", False):
+            recipient_email = st.session_state.get("dev_recipient_email", "don.kruger123@gmail.com")
+        else:
+            recipient_email = "don.kruger123@gmail.com"
+        
+        # Extract user info following existing pattern
+        user_info = submission_data.get("user_info", {})
+        user_name = user_info.get("user_name", "Unknown User")
+        user_id = user_info.get("user_id", "Unknown")
+        
+        # Create message following existing structure
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.base import MIMEBase
+        from email import encoders
+        import smtplib
+        
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg["Subject"] = f"Share Transfer Portfolio Submission - {user_name}"
+        
+        # Email body following existing format
+        body = f"""
+A new portfolio submission with share transfer data has been completed.
+
+User Details:
+• Name: {user_name}
+• User ID: {user_id}
+• Selected Wallet: {user_info.get('selected_wallet', 'N/A')}
+• Submission Time: {submission_data.get('submission_timestamp', 'Unknown')}
+
+Portfolio Summary:
+• Total Instruments: {len(submission_data.get('selected_instruments', []))}
+• Portfolio Entries: {len(share_transfer_data)}
+• Additional Notes: {submission_data.get('submission_notes', 'None provided')}
+
+Attachments:
+• PDF Report: Complete portfolio summary
+• Instruments CSV: Selected instruments details
+• Share Transfer CSV: Portfolio data in target format
+
+Please process according to share transfer procedures.
+
+Regards,
+Smart Instrument Finder System
+"""
+        
+        msg.attach(MIMEText(body, "plain"))
+        
+        # Generate filenames following existing pattern
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_user_name = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        base_filename = f"Portfolio_{safe_user_name}_{timestamp}"
+        
+        # Attach PDF using existing pattern
+        pdf_bytes = make_pdf(submission_data)
+        pdf_part = MIMEBase("application", "octet-stream")
+        pdf_part.set_payload(pdf_bytes)
+        encoders.encode_base64(pdf_part)
+        pdf_part.add_header(
+            "Content-Disposition",
+            f"attachment; filename={base_filename}.pdf"
+        )
+        msg.attach(pdf_part)
+        
+        # Attach instruments CSV
+        instruments_csv = generate_instruments_csv(submission_data.get('selected_instruments', []))
+        instruments_part = MIMEBase("application", "octet-stream")
+        instruments_part.set_payload(instruments_csv.encode("utf-8"))
+        encoders.encode_base64(instruments_part)
+        instruments_part.add_header(
+            "Content-Disposition",
+            f"attachment; filename={base_filename}_instruments.csv"
+        )
+        msg.attach(instruments_part)
+        
+        # Attach share transfer CSV
+        share_transfer_csv = generate_share_transfer_csv(share_transfer_data)
+        transfer_part = MIMEBase("application", "octet-stream")
+        transfer_part.set_payload(share_transfer_csv.encode("utf-8"))
+        encoders.encode_base64(transfer_part)
+        transfer_part.add_header(
+            "Content-Disposition",
+            f"attachment; filename={base_filename}_share_transfer.csv"
+        )
+        msg.attach(transfer_part)
+        
+        # Send email using existing pattern
+        st.info(f"Attempting to send email to: {recipient_email}")
+        
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            st.info("Email sent successfully via SMTP")
+        
+        st.success(f"Portfolio submission sent successfully!")
+        st.info(f"Email sent to: {recipient_email}")
+        st.info(f"PDF Report: {base_filename}.pdf")
+        st.info(f"Instruments CSV: {base_filename}_instruments.csv")
+        st.info(f"Share Transfer CSV: {base_filename}_share_transfer.csv")
+        
+    except Exception as e:
+        st.error(f"Email sending failed: {str(e)}")
+        st.error("Please check your email configuration in .streamlit/secrets.toml and try again.")
+
 # Keep the original function for backward compatibility
 def handle_submission(answers: Dict[str, Any], uploaded_files: List[Optional[st.runtime.uploaded_file_manager.UploadedFile]]):
     """Legacy submission handler - kept for backward compatibility."""

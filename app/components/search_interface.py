@@ -42,7 +42,7 @@ class SearchInterface:
                                 help="Clear current search results only")
         
         # Advanced search options
-        with st.expander("⚙️ Search Options", expanded=False):
+        with st.expander("Search Options", expanded=False):
             col1, col2, col3 = st.columns(3)
             with col1:
                 fuzzy_threshold = st.slider(
@@ -83,7 +83,7 @@ class SearchInterface:
         """Clear ONLY search results, preserve selections."""
         if 'current_results' in st.session_state:
             st.session_state.current_results = []
-        # ✅ DO NOT clear selected_instruments - selections persist across searches
+        # DO NOT clear selected_instruments - selections persist across searches
 
 def render_search_stats(results_count: int, search_query: str = "", wallet: str = ""):
     """Render search statistics and history information."""

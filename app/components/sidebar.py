@@ -73,4 +73,40 @@ def render_sidebar():
     with st.sidebar:        
         st.markdown("---")
         
+        # Portfolio status section
+        from app.services.selection_manager import SelectionManager
+        from app.services.portfolio_service import PortfolioService
+        
+        selected_instruments = SelectionManager.get_selections()
+        
+        if selected_instruments:
+            st.markdown("### Portfolio Status")
+            
+            portfolio_entries = PortfolioService.get_all_portfolio_entries()
+            completed_count = len([k for k in portfolio_entries.keys() 
+                                  if str(k) in [str(inst.get('instrument_id')) for inst in selected_instruments]])
+            
+            completion_rate = (completed_count / len(selected_instruments)) * 100
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Selected", len(selected_instruments))
+            with col2:
+                st.metric("Configured", completed_count)
+            
+            # Progress bar
+            st.progress(completion_rate / 100)
+            st.caption(f"Portfolio completion: {completion_rate:.0f}%")
+            
+            if completion_rate < 100:
+                st.warning(f"{len(selected_instruments) - completed_count} instruments need configuration")
+                if st.button("Configure Portfolio", use_container_width=True):
+                    st.switch_page("pages/2_Portfolio.py")
+            else:
+                st.success("Portfolio ready for submission!")
+                if st.button("Submit Portfolio", type="primary", use_container_width=True):
+                    st.switch_page("pages/3_Submit.py")
+            
+            st.markdown("---")
+        
         st.info("Please populate your information on the right to get started.") 

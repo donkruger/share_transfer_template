@@ -1,0 +1,206 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Portfolio Data Schema for AI Integration",
+    "description": "JSON schema for external agents to populate portfolio data from PDF statements",
+    "type": "object",
+    "properties": {
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ai_agent",
+                        "pdf_parser",
+                        "manual_entry"
+                    ],
+                    "description": "Data source identifier"
+                },
+                "confidence_score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "AI confidence in extracted data (0-1)"
+                },
+                "extraction_timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "When the data was extracted"
+                },
+                "source_document": {
+                    "type": "string",
+                    "description": "Original PDF filename or identifier"
+                },
+                "user_session_id": {
+                    "type": "string",
+                    "description": "User session for data association"
+                }
+            },
+            "required": [
+                "source",
+                "extraction_timestamp"
+            ]
+        },
+        "portfolio_entries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "instrument_identifier": {
+                        "type": "object",
+                        "properties": {
+                            "ticker": {
+                                "type": "string"
+                            },
+                            "isin": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "instrument_id": {
+                                "type": [
+                                    "string",
+                                    "number"
+                                ]
+                            }
+                        },
+                        "anyOf": [
+                            {
+                                "required": [
+                                    "ticker"
+                                ]
+                            },
+                            {
+                                "required": [
+                                    "isin"
+                                ]
+                            },
+                            {
+                                "required": [
+                                    "name"
+                                ]
+                            },
+                            {
+                                "required": [
+                                    "instrument_id"
+                                ]
+                            }
+                        ]
+                    },
+                    "portfolio_data": {
+                        "type": "object",
+                        "properties": {
+                            "platform": {
+                                "type": "string",
+                                "enum": [
+                                    "EE",
+                                    "SX"
+                                ],
+                                "default": "EE"
+                            },
+                            "trust_account_id": {
+                                "type": "string",
+                                "pattern": "^[0-9]{6,10}$",
+                                "description": "6-10 digit account identifier"
+                            },
+                            "quantity": {
+                                "type": "number",
+                                "description": "Share quantity (can be negative for sales)"
+                            },
+                            "base_cost": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Original cost per unit"
+                            },
+                            "settlement_date": {
+                                "type": "string",
+                                "format": "date",
+                                "description": "Settlement date in YYYY-MM-DD format"
+                            },
+                            "last_price": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Current market price per unit"
+                            },
+                            "broker_from": {
+                                "type": "string",
+                                "enum": [
+                                    "7",
+                                    "9",
+                                    "14",
+                                    "26",
+                                    "27"
+                                ],
+                                "description": "Source broker ID"
+                            },
+                            "broker_to": {
+                                "type": "string",
+                                "enum": [
+                                    "7",
+                                    "9",
+                                    "14",
+                                    "26",
+                                    "27"
+                                ],
+                                "description": "Destination broker ID"
+                            },
+                            "notes": {
+                                "type": "string",
+                                "description": "Additional notes or comments"
+                            },
+                            "ai_extracted_fields": {
+                                "type": "object",
+                                "description": "Metadata about AI extraction confidence per field",
+                                "properties": {
+                                    "trust_account_id": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "quantity": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "base_cost": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "settlement_date": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "last_price": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "trust_account_id",
+                            "quantity",
+                            "base_cost",
+                            "settlement_date",
+                            "last_price",
+                            "broker_from",
+                            "broker_to"
+                        ]
+                    }
+                },
+                "required": [
+                    "instrument_identifier",
+                    "portfolio_data"
+                ]
+            }
+        }
+    },
+    "required": [
+        "metadata",
+        "portfolio_entries"
+    ]
+}

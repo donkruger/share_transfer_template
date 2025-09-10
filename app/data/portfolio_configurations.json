@@ -1,0 +1,43 @@
+{
+    "validation_settings": {
+        "trust_account_id_pattern": "^[0-9]{6,10}$",
+        "max_quantity": 999999999,
+        "min_quantity": -999999999,
+        "max_price": 99999999,
+        "required_fields": [
+            "trust_account_id",
+            "quantity",
+            "base_cost",
+            "settlement_date",
+            "last_price",
+            "broker_from",
+            "broker_to"
+        ]
+    },
+    "ui_settings": {
+        "default_platform": "EE",
+        "show_confidence_scores": true,
+        "require_ai_review": true,
+        "auto_save_interval": 30
+    },
+    "csv_format": {
+        "column_order": [
+            "SX/EE",
+            "User ID ",
+            "TrustAccountID",
+            "ShareCode",
+            "InstrumentID",
+            "Qty",
+            "Base Cost ©",
+            "Excel Date",
+            "SettlementDate",
+            "Last Price",
+            "BrokerID_From",
+            "BrokerID_To",
+            "Reference",
+            "",
+            " "
+        ],
+        "reference_pattern": "NT -{settlement_date},NT -,{excel_date}"
+    }
+}

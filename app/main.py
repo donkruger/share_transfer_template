@@ -80,7 +80,7 @@ def load_application_data():
     
     if not csv_path:
         logger.error("No CSV file found in any of the expected locations")
-        st.error("❌ Instrument data CSV file not found. Please ensure the data file is available.")
+        st.error("Instrument data CSV file not found. Please ensure the data file is available.")
         st.stop()
     
     wallet_config_path = Path(__file__).parent / "data" / "wallet_specifications.json"
@@ -116,11 +116,11 @@ def main():
     try:
         instruments_df, wallet_config = load_application_data()
     except Exception as e:
-        st.error(f"❌ Failed to load application data: {e}")
+        st.error(f"Failed to load application data: {e}")
         st.stop()
     
     if instruments_df.empty:
-        st.error("❌ No instrument data available. Please check the data file.")
+        st.error("No instrument data available. Please check the data file.")
         st.stop()
     
     wallet_filter = WalletFilterEngine(str(Path(__file__).parent / "data" / "wallet_specifications.json"))

@@ -1,0 +1,45 @@
+{
+    "broker_mappings": {
+        "7": {
+            "name": "EasyEquities Retail",
+            "display_name": "EasyEquities Retail Platform",
+            "active": true
+        },
+        "9": {
+            "name": "EasyEquities",
+            "display_name": "EasyEquities Standard",
+            "active": true
+        },
+        "14": {
+            "name": "Institutional",
+            "display_name": "Institutional Platform",
+            "active": true
+        },
+        "26": {
+            "name": "External Transfer",
+            "display_name": "External Transfer Agent",
+            "active": true
+        },
+        "27": {
+            "name": "Corporate Actions",
+            "display_name": "Corporate Actions Desk",
+            "active": true
+        }
+    },
+    "default_brokers": {
+        "from": "9",
+        "to": "9"
+    },
+    "platform_options": [
+        {
+            "value": "EE",
+            "label": "EasyEquities",
+            "default": true
+        },
+        {
+            "value": "SX",
+            "label": "Satrix",
+            "default": false
+        }
+    ]
+}

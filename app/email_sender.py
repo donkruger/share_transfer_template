@@ -42,11 +42,11 @@ def send_submission_email_with_metadata(
         # In dev mode, allow configurable email; otherwise use default production email
         if st.session_state.get("dev_mode", False):
             # Dev mode: Allow user to configure email or use default
-            dev_email = st.session_state.get("dev_recipient_email", "jpearse@purplegroup.co.za")
+            dev_email = st.session_state.get("dev_recipient_email", "don.kruger123@gmail.com")
             recipient_email = dev_email
         else:
             # Production mode: Always use default email
-            recipient_email = "jpearse@purplegroup.co.za"
+            recipient_email = "don.kruger123@gmail.com"
 
         # --- Extract Entity Information ---
         entity_user_id = answers.get("Entity User ID", "Unknown")

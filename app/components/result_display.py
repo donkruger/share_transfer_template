@@ -102,7 +102,7 @@ class ResultDisplayComponent:
                 name_display = f"**{result.get('name', 'N/A')}**"
                 
                 if is_already_selected and allow_selection:
-                    name_display += " 🔖"  # Visual indicator for selected items
+                    name_display += " [Selected]"  # Visual indicator for selected items
                 
                 st.markdown(name_display)
                 if result.get('ticker'):
@@ -189,7 +189,7 @@ def render_selection_summary():
                 st.switch_page("pages/1_AI_Assistance.py")
         with col2:
             if st.button("Proceed to Submit", type="primary", use_container_width=True):
-                st.switch_page("pages/2_Submit.py")
+                st.switch_page("pages/3_Submit.py")
         with col3:
             if st.button("Clear All Selections", type="secondary", use_container_width=True):
                 if st.session_state.get('confirm_clear_selections', False):
@@ -216,7 +216,8 @@ def render_selection_summary():
                     st.caption(f"Ticker: {instrument.get('ticker', 'N/A')}")
                 with col2:
                     st.write(f"{instrument.get('exchange', 'N/A')}")
-                    st.caption(f"{instrument.get('asset_type', 'N/A')}")
+                    asset_group = instrument.get('asset_group', instrument.get('asset_type', 'N/A'))
+                    st.caption(f"{asset_group} | {instrument.get('currency', 'N/A')}")
                 with col3:
                     if st.button("Remove", key=f"remove_summary_{i}", type="secondary"):
                         SelectionManager.remove_instrument(instrument)

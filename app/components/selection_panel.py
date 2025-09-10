@@ -130,11 +130,12 @@ class SelectionPanel:
         with col1:
             st.write(f"**{instrument.get('name', 'Unknown Instrument')}**")
             if instrument.get('ticker'):
-                st.caption(f"Ticker: {instrument.get('ticker')}")
+                st.caption(f"Ticker: {instrument.get('ticker')} | ISIN: {instrument.get('isin', 'N/A')}")
         
         with col2:
-            st.write(f"{instrument.get('asset_type', 'N/A')}")
-            st.caption(f"Exchange: {instrument.get('exchange', 'N/A')}")
+            asset_group = instrument.get('asset_group', instrument.get('asset_type', 'N/A'))
+            st.write(f"{asset_group}")
+            st.caption(f"Exchange: {instrument.get('exchange', 'N/A')} | {instrument.get('currency', 'N/A')}")
         
         with col3:
             # Show selection metadata
@@ -194,7 +195,7 @@ class SelectionPanel:
             st.rerun()
         else:
             st.session_state.confirm_clear_all = True
-            st.warning("⚠️ This will clear ALL selected instruments. Click 'Clear All' again to confirm.")
+            st.warning("This will clear ALL selected instruments. Click 'Clear All' again to confirm.")
             
             # Auto-reset confirmation after 10 seconds (simulated with button)
             if st.button("Cancel", key="cancel_clear_all"):

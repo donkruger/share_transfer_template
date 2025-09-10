@@ -62,17 +62,35 @@ def initialize_state():
         st.session_state.setdefault("messages", [])  # AI Assistant chat
         st.session_state.setdefault("submission_notes", "")
         
+        # NEW: Portfolio management state (persistent like selections)
+        st.session_state.setdefault("portfolio_entries", {})
+        st.session_state.setdefault("portfolio_metadata", {
+            'default_platform': 'EE',
+            'default_broker_from': '9',
+            'default_broker_to': '9',
+            'last_updated': None
+        })
+        st.session_state.setdefault("portfolio_form_data", {})
+        
         # Data caching
         st.session_state.setdefault("instruments_df", None)
         st.session_state.setdefault("wallet_config", None)
         
         # Session metadata  
         st.session_state.setdefault("session_id", generate_session_id())
-        st.session_state.setdefault("page_visits", {"main": 0, "ai_assistance": 0, "submit": 0})
+        st.session_state.setdefault("page_visits", {
+            "main": 0, 
+            "ai_assistance": 0, 
+            "submit": 0,
+            "portfolio": 0  # NEW: Track portfolio page visits
+        })
         
         # Selection management flags
         st.session_state.setdefault("confirm_clear_selections", False)
         st.session_state.setdefault("confirm_clear_all", False)
+        
+        # NEW: Portfolio management flags
+        st.session_state.setdefault("confirm_clear_portfolio", False)
         
         st.session_state.state_initialized = True
 
@@ -165,6 +183,39 @@ def clear_search_results():
     st.session_state.current_results = []
     # ✅ DO NOT clear selected_instruments - selections persist across searches
 
+def convert_date_to_excel_format(date_string: str) -> str:
+    """Convert YYYY-MM-DD to YYYY/MM/DD format for Excel Date column."""
+    if isinstance(date_string, str) and len(date_string) == 10:
+        return date_string.replace('-', '/')
+    return date_string
+
+def validate_portfolio_entry(portfolio_data: Dict) -> List[str]:
+    """Validate portfolio entry using existing validation patterns."""
+    errors = []
+    
+    required_fields = [
+        ('trust_account_id', 'Trust Account ID'),
+        ('quantity', 'Quantity'),
+        ('base_cost', 'Base Cost'),
+        ('settlement_date', 'Settlement Date'),
+        ('last_price', 'Last Price'),
+        ('broker_from', 'Source Broker'),
+        ('broker_to', 'Destination Broker')
+    ]
+    
+    for field, display_name in required_fields:
+        if field not in portfolio_data or portfolio_data[field] in [None, '', 0]:
+            if field == 'quantity':
+                continue  # Quantity can be 0 or negative
+            errors.append(f"{display_name} is required")
+    
+    # Quantity validation (can be negative but not zero for transfers)
+    quantity = portfolio_data.get('quantity', 0)
+    if quantity == 0:
+        errors.append("Quantity cannot be zero for transfers")
+    
+    return errors
+
 def get_favicon_path():
     """Returns the path to the favicon for chat avatars."""
     favicon_path = Path(__file__).resolve().parent.parent / "assets" / "logos" / "favicon.svg"
@@ -217,7 +268,7 @@ def _legacy_initialize_state():
             "s2_name": "", "s2_desig": "",
             # Development mode toggle for testing
             "dev_mode": False,
-            "dev_recipient_email": "jpearse@purplegroup.co.za",
+            "dev_recipient_email": "don.kruger123@gmail.com",
             # Favicon path for consistent use across pages
             "favicon_path": str(favicon_path),
             

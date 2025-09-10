@@ -1,14 +1,19 @@
 [[pages]]
 path = "main.py"
 name = "Find Instruments"
-icon = "🔍"
+icon = ""
 
 [[pages]]
 path = "app/pages/1_AI_Assistance.py"
 name = "AI Assistance"
-icon = "🤖"
+icon = ""
 
 [[pages]]
-path = "app/pages/2_Submit.py"
+path = "app/pages/2_Portfolio.py"
+name = "My Portfolio"
+icon = ""
+
+[[pages]]
+path = "app/pages/3_Submit.py"
 name = "Submit Results"
-icon = "📤"
+icon = ""

@@ -210,20 +210,86 @@ class InstrumentFuzzyMatcher:
         
         return results
     
+    def _determine_currency(self, row: pd.Series) -> str:
+        """
+        Determine the trading currency based on exchange or wallet filters.
+        """
+        exchange = row.get('Exchange', '').upper()
+        
+        # Map exchanges to currencies
+        exchange_currency_map = {
+            'JSE': 'ZAR',
+            'NYSE': 'USD',
+            'NASDAQ': 'USD',
+            'LSE': 'GBP',
+            'EURONEXT': 'EUR',
+            'ASX': 'AUD',
+            'TSX': 'CAD',
+            'HKEX': 'HKD',
+            'SSE': 'CNY',
+            'NSE': 'INR',
+            'BOVESPA': 'BRL'
+        }
+        
+        # First try to get currency from exchange
+        if exchange in exchange_currency_map:
+            return exchange_currency_map[exchange]
+        
+        # Check if any wallet filter columns have values to infer currency
+        # Look for accountFilters/TradingCurrency* columns
+        for col in row.index:
+            if col.startswith('accountFilters/TradingCurrency'):
+                if pd.notna(row[col]) and row[col] != 0:
+                    # Extract currency from column name
+                    currency_part = col.replace('accountFilters/TradingCurrency', '')
+                    # Map common wallet types to currencies
+                    if currency_part in ['ZAR', 'TFSA', 'RA']:
+                        return 'ZAR'
+                    elif currency_part == 'USD':
+                        return 'USD'
+                    elif currency_part == 'GBP':
+                        return 'GBP'
+                    elif currency_part == 'EUR':
+                        return 'EUR'
+                    elif currency_part == 'AUD':
+                        return 'AUD'
+        
+        # Default to ZAR if no currency can be determined
+        return 'ZAR'
+    
     def _create_result_dict(self, row: pd.Series, score: int, match_type: str) -> Dict:
-        """Create standardized result dictionary."""
+        """Create standardized result dictionary with all required fields from CSV."""
+        # Determine currency based on exchange or wallet filters
+        currency = self._determine_currency(row)
+        
         return {
+            # Core identifiers
             'instrument_id': row.get('InstrumentID', ''),
             'name': row.get('Name', ''),
             'ticker': row.get('Ticker', ''),
             'isin': row.get('ISINCode', ''),
             'contract_code': row.get('ContractCode', ''),
-            'asset_type': row.get('AssetType', ''),
+            
+            # Asset classification - using correct CSV column names
+            'asset_group': row.get('AssetGroup', ''),
+            'asset_sub_group': row.get('AssetSubGroup', ''),
+            'asset_type': row.get('AssetGroup', ''),  # Map AssetGroup to asset_type for backward compatibility
+            
+            # Exchange and currency info
             'exchange': row.get('Exchange', ''),
-            'currency': row.get('TradingCurrency', ''),
+            'currency': currency,
+            
+            # Description
+            'description': row.get('*Description', ''),
+            
+            # Search metadata
             'relevance_score': score,
             'match_type': match_type,
+            
+            # Wallet eligibility
             'account_filters': row.get('accountFiltersArray', ''),
+            
+            # Keep raw data for any additional fields needed
             'raw_data': row.to_dict()
         }
     
