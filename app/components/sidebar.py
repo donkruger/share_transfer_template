@@ -6,45 +6,71 @@ from app.utils import svg_image_html
 
 def render_sidebar():
     """Renders the sidebar with custom page navigation."""
-    # CSS to hide native Streamlit page navigation
-    hide_native_nav_css = """
+    # CSS to hide native Streamlit page navigation - COMMENTED OUT to show pages
+    # hide_native_nav_css = """
+    # <style>
+    # /* Hide native Streamlit page navigation */
+    # [data-testid="stSidebarNav"] {
+    #     display: none !important;
+    # }
+    # </style>
+    # """
+    # st.markdown(hide_native_nav_css, unsafe_allow_html=True)
+    
+    # Get logo for CSS embedding
+    logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "eesvg.svg"
+    logo_data_uri = ""
+    if logo_path.exists():
+        try:
+            import base64
+            with open(logo_path, "rb") as f:
+                svg_bytes = f.read()
+            svg_b64 = base64.b64encode(svg_bytes).decode("utf-8")
+            logo_data_uri = f"data:image/svg+xml;base64,{svg_b64}"
+        except Exception:
+            logo_data_uri = ""
+
+    # Sidebar styling with logo positioning
+    sidebar_css = f"""
     <style>
-    /* Hide native Streamlit page navigation */
-    [data-testid="stSidebarNav"] {
-        display: none !important;
-    }
+    /* Sidebar background styling - removed to allow gradient from main.py */
+    /* Background is now handled by animated gradient in main.py */
+    
+    /* Reorder sidebar content: logo first, then navigation */
+    [data-testid="stSidebar"] > div > div:first-child {{
+        display: flex !important;
+        flex-direction: column !important;
+    }}
+    
+    /* Move navigation below logo by changing order */
+    [data-testid="stSidebarNav"] {{
+        order: 2 !important;
+        margin-top: 0px !important;
+    }}
+    
+    /* Add logo before navigation */
+    [data-testid="stSidebarNav"]::before {{
+        content: "";
+        display: block;
+        background-image: url('{logo_data_uri}');
+        background-size: 180px auto;
+        background-repeat: no-repeat;
+        background-position: center;
+        height: 60px;
+        width: 100%;
+        margin: 20px 0 15px 0;
+        order: 1 !important;
+    }}
+    
+    /* Ensure other sidebar content comes after navigation */
+    [data-testid="stSidebar"] .block-container {{
+        order: 3 !important;
+    }}
     </style>
     """
-    st.markdown(hide_native_nav_css, unsafe_allow_html=True)
+    st.markdown(sidebar_css, unsafe_allow_html=True)
     
-    # Subtle light-blue sidebar background to replace default grey
-    # Includes dark-mode friendly variant via prefers-color-scheme
-    sidebar_bg_css = """
-    <style>
-    [data-testid=\"stSidebar\"],
-    [data-testid=\"stSidebar\"] > div:first-child {
-        background: linear-gradient(135deg, #f5fbff 0%, #eaf6ff 100%) !important;
-    }
-    @media (prefers-color-scheme: dark) {
-      [data-testid=\"stSidebar\"],
-      [data-testid=\"stSidebar\"] > div:first-child {
-          background: linear-gradient(135deg, rgba(15, 188, 227, 0.10) 0%, rgba(60, 102, 164, 0.10) 100%) !important;
-      }
-    }
-    </style>
-    """
-    st.markdown(sidebar_bg_css, unsafe_allow_html=True)
-    
-    with st.sidebar:
-        # Logo at the top of sidebar
-        logo_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "stx_svg.svg"
-        if logo_path.exists():
-            st.image(str(logo_path), width=240)
-        
+    with st.sidebar:        
         st.markdown("---")
         
-        # Custom page navigation with proper labels and icons
-        # Paths must be relative to the app directory
-        st.page_link('main.py', label='Capture Info')
-        st.page_link('pages/1_AI_Assistance.py', label='AI Assistance', icon='🤖')
-        st.page_link('pages/3_Declaration_and_Submit.py', label='Declaration & Submit') 
+        st.info("Please populate your information on the right to get started.") 

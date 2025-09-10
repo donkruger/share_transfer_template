@@ -1,6 +1,7 @@
 [[pages]]
-path = "app/main.py"
-name = "Capture Info"
+path = "main.py"
+name = "Find Instruments"
+icon = "🔍"
 
 [[pages]]
 path = "app/pages/1_AI_Assistance.py"
@@ -8,5 +9,6 @@ name = "AI Assistance"
 icon = "🤖"
 
 [[pages]]
-path = "app/pages/3_Declaration_and_Submit.py"
-name = "Declaration & Submit"
+path = "app/pages/2_Submit.py"
+name = "Submit Results"
+icon = "📤"

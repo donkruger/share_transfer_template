@@ -35,7 +35,7 @@ def send_submission_email_with_metadata(
             sender_email = st.secrets["email_credentials"]["email_address"]
             sender_password = st.secrets["email_credentials"]["app_password"]
         except KeyError as ke:
-            st.error(f"❌ Missing email credentials in secrets.toml: {ke}")
+            st.error(f"Missing email credentials in secrets.toml: {ke}")
             return
         
         # --- Set the recipient email address here ---
@@ -137,7 +137,7 @@ def send_submission_email_with_metadata(
             )
             msg.attach(csv_part)
         except Exception as csv_error:
-            st.warning(f"⚠️ Could not generate CSV file: {csv_error}")
+            st.warning(f"Could not generate CSV file: {csv_error}")
             # Continue without CSV attachment
 
         # --- Attach User Uploaded Files with Enhanced Names ---
@@ -166,10 +166,10 @@ def send_submission_email_with_metadata(
             server.send_message(msg)
             st.info("📧 Email sent successfully via SMTP")
         
-        st.success(f"✅ Entity Onboarding submission sent successfully!")
+        st.success(f"Entity Onboarding submission sent successfully!")
         st.info(f"📧 Email sent to: {recipient_email}")
         st.info(f"📎 PDF Summary: {base_filename}.pdf")
-        st.info(f"📊 CSV Data File: {base_filename}.csv")
+        st.info(f"CSV Data File: {base_filename}.csv")
         
         # Enhanced attachment logging
         if attachments:
@@ -180,7 +180,7 @@ def send_submission_email_with_metadata(
                 st.info(f"  • ... and {len(attachments) - 5} more")
 
     except Exception as e:
-        st.error(f"❌ Failed to send Entity Onboarding submission email: {e}")
+        st.error(f"Failed to send Entity Onboarding submission email: {e}")
         st.error("Please check your email configuration in .streamlit/secrets.toml and try again.")
 
 

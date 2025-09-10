@@ -1,0 +1,80 @@
+{
+    "wallet_mappings": {
+        "2": {
+            "name": "ZAR",
+            "display_name": "EasyEquities ZAR",
+            "currency": "ZAR",
+            "active": true
+        },
+        "3": {
+            "name": "TFSA",
+            "display_name": "Tax-Free Savings Account",
+            "currency": "ZAR",
+            "active": true
+        },
+        "9": {
+            "name": "RA",
+            "display_name": "Retirement Annuity",
+            "currency": "ZAR",
+            "active": true
+        },
+        "10": {
+            "name": "USD",
+            "display_name": "EasyEquities USD",
+            "currency": "USD",
+            "active": true
+        },
+        "74": {
+            "name": "GBP",
+            "display_name": "EasyEquities GBP",
+            "currency": "GBP",
+            "active": true
+        },
+        "75": {
+            "name": "EUR",
+            "display_name": "EasyEquities EUR",
+            "currency": "EUR",
+            "active": true
+        },
+        "16": {
+            "name": "AUD",
+            "display_name": "EasyEquities AUD",
+            "currency": "AUD",
+            "active": true
+        },
+        "55": {
+            "name": "LA",
+            "display_name": "Living Annuity",
+            "currency": "ZAR",
+            "active": true
+        },
+        "48": {
+            "name": "PENS",
+            "display_name": "Preservation Pension Fund",
+            "currency": "ZAR",
+            "active": true
+        },
+        "24": {
+            "name": "PROV",
+            "display_name": "Preservation Provident Fund",
+            "currency": "ZAR",
+            "active": true
+        }
+    },
+    "default_wallets": [
+        "ZAR",
+        "USD",
+        "TFSA",
+        "RA"
+    ],
+    "search_settings": {
+        "fuzzy_threshold": 80,
+        "max_results": 50,
+        "result_fields": [
+            "Name",
+            "Ticker",
+            "AssetType",
+            "Exchange"
+        ]
+    }
+}

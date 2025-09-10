@@ -1,6 +1,13 @@
 [theme]
-primaryColor = "#0fbce3"
 base = "light"
+primaryColor = "#f4942a"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#fef3e2"
+textColor = "#4a4a4a"
+font = "sans serif"
+
+[theme.sidebar]
+secondaryBackgroundColor = "#f5f6f8"
 
 [server]
 enableCORS = false

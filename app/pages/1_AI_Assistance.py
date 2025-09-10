@@ -6,32 +6,62 @@ from pathlib import Path
 import google.generativeai as genai
 import json
 import random
-from streamlit_lottie import st_lottie
 
 # --- PATH SETUP ---
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from app.components.sidebar import render_sidebar
-from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS
-from app.utils import initialize_state, get_favicon_path
+from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, SIDEBAR_GRADIENT_CSS
+from app.utils import initialize_state
 
-
+def get_favicon_path() -> str:
+    """Returns the absolute path to the favicon SVG, checking for existence."""
+    try:
+        # Correct path from the pages directory
+        favicon_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "favicon.svg"
+        if favicon_path.exists():
+            return str(favicon_path)
+    except Exception:
+        pass
+    # Return an empty string if not found to let Streamlit use its default
+    return ""
 
 # --- PAGE CONFIG ---
-favicon_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "favicon.svg"
+favicon_path_str = get_favicon_path()
 st.set_page_config(
-    page_title="AI Assistance - Entity Onboarding",
-    page_icon=str(favicon_path),
+    page_title="AI Assistance - Smart Instrument Finder",
+    page_icon=favicon_path_str if favicon_path_str else "🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # --- INITIALIZE STATE ---
-initialize_state()
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 
 # Apply styling
 st.markdown(GOOGLE_FONTS_CSS, unsafe_allow_html=True)
 st.markdown(GRADIENT_TITLE_CSS, unsafe_allow_html=True)
 st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
+
+# Apply sidebar gradient styling to match main page
+st.markdown(SIDEBAR_GRADIENT_CSS, unsafe_allow_html=True)
+
+# Additional comprehensive spacing removal for this page
+st.markdown("""
+<style>
+    /* Ensure gradient title sits flush at top */
+    .gradient-title {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* Remove any remaining top spacing */
+    .main .block-container > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- GEMINI API CONFIGURATION ---
 try:
@@ -42,25 +72,6 @@ try:
 except (KeyError, FileNotFoundError):
     st.error("❗ Gemini API key not found. Please add it to your `secrets.toml` file.")
     st.stop()
-
-# --- KNOWLEDGE BASE LOADING ---
-def load_knowledge_base():
-    """Loads the knowledge base from the markdown file."""
-    try:
-        # Correctly navigate to the project root to find the file
-        knowledge_path = Path(__file__).resolve().parent.parent.parent / "knowledge_set.md"
-        with open(knowledge_path, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        st.error("`knowledge_set.md` not found in the project root.")
-        return ""
-
-KNOWLEDGE_BASE = load_knowledge_base()
-
-# --- AVATAR LOADING ---
-def get_user_avatar_path():
-    """Returns the path to the user profile SVG avatar."""
-    return str(Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "profile.svg")
 
 # --- LOTTIE ANIMATION LOADING ---
 def load_random_lottie():
@@ -78,12 +89,61 @@ def load_random_lottie():
         with open(selected_file, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        st.error(f"Error loading Lottie animation: {e}")
+        st.warning(f"Could not load animation: {e}")
         return None
+
+# --- AVATAR LOADING ---
+def get_user_avatar_path():
+    """Returns the path to the user profile SVG avatar."""
+    profile_path = Path(__file__).resolve().parent.parent.parent / "assets" / "logos" / "profile.svg"
+    if profile_path.exists():
+        return str(profile_path)
+    else:
+        # Fallback to emoji if file doesn't exist
+        return "👤"
+
+# --- KNOWLEDGE BASE LOADING ---
+def load_knowledge_base():
+    """Loads the knowledge base from the markdown file."""
+    try:
+        # Correctly navigate to the project root to find the file
+        knowledge_path = Path(__file__).resolve().parent.parent.parent / "instrument_finder_knowledge_base.md"
+        with open(knowledge_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        # Fallback to a basic knowledge base if file not found
+        return """
+        # Smart Instrument Finder Knowledge Base
+        
+        ## About the Application
+        The Smart Instrument Finder helps users discover if instruments from their external investment portfolio are available within the EasyEquities ecosystem.
+        
+        ## Search Features
+        - Multi-field search: Search by instrument name, ticker symbol, or ISIN code
+        - Fuzzy matching: Find instruments even with partial or misspelled names
+        - Wallet filtering: See only instruments available in your selected wallet
+        - Real-time results: Instant search through thousands of instruments
+        
+        ## Available Wallets
+        - ZAR: South African Rand accounts
+        - USD: US Dollar accounts  
+        - TFSA: Tax-Free Savings Account
+        - RA: Retirement Annuity
+        - GBP/EUR/AUD: Foreign currency accounts
+        
+        ## Search Tips
+        - Use full company names for better results
+        - Try ticker symbols for exact matches
+        - Use ISIN codes for precise identification
+        - Adjust fuzzy threshold in search options
+        - Try different wallet contexts if no results found
+        """
+
+KNOWLEDGE_BASE = load_knowledge_base()
 
 # --- SYSTEM PROMPT ---
 SYSTEM_PROMPT = f"""
-You are a specialist assistant for Satrix entity oboarding. Your role is to answer questions pertaining to an entity onboarding journey. 
+You are a specialist assistant for Smart Instrument Finder. Your role is to answer questions pertaining to instrument searching and portfolio discovery.
 - If the answer is not in the knowledge base, state: "I'm sorry, but that information is not available in my knowledge base."
 
 **Knowledge Base:**
@@ -95,19 +155,73 @@ You are a specialist assistant for Satrix entity oboarding. Your role is to answ
 # Render the main sidebar
 render_sidebar()
 
+def generate_agent_response(prompt: str):
+    """Generates and displays the agent's response, updating session state."""
+    # Add user message to session state
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    # Display user message
+    with st.chat_message("user", avatar=get_user_avatar_path()):
+        st.markdown(prompt)
+
+    # Generate and display assistant response
+    with st.chat_message("assistant", avatar=get_favicon_path()):
+        message_placeholder = st.empty()
+        full_response = ""
+        try:
+            conversation_history = [
+                {'role': 'user', 'parts': [SYSTEM_PROMPT]}
+            ]
+            for msg in st.session_state.messages:
+                conversation_history.append({'role': msg['role'], 'parts': [msg['content']]})
+            
+            response = model.generate_content(conversation_history)
+            full_response = response.text
+            message_placeholder.markdown(full_response)
+        except Exception as e:
+            st.error(f"An error occurred with the AI model: {e}")
+            full_response = "Sorry, I encountered an error. Please try again."
+            message_placeholder.markdown(full_response)
+    
+    # Add assistant response to session state
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+
 # --- CHATBOT UI ---
 # Create two columns for title and animation
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.markdown('<h1 class="gradient-title">Entity Onboarding Assistant</h1>', unsafe_allow_html=True)
-    st.caption("Your AI-powered guide to the Entity Onboarding process.")
+    st.markdown('<h1 class="gradient-title">Smart Search Assistant</h1>', unsafe_allow_html=True)
+    st.caption("Your AI-powered guide to finding instruments in the EasyEquities ecosystem.")
 
 with col2:
     # Load and display random Lottie animation
-    lottie_animation = load_random_lottie()
-    if lottie_animation:
-        st_lottie(lottie_animation, height=100, width=100, key="ai_assistant_animation")
+    try:
+        from streamlit_lottie import st_lottie
+        lottie_animation = load_random_lottie()
+        if lottie_animation:
+            st_lottie(lottie_animation, height=100, width=100, key="ai_assistant_animation")
+    except ImportError:
+        st.info("AI assistant ready")
+
+# Show current context information
+if st.session_state.get("user_name") or st.session_state.get("selected_instruments"):
+    with st.expander("Current Session Context", expanded=False):
+        if st.session_state.get("user_name"):
+            st.write(f"**User:** {st.session_state.get('user_name')}")
+        if st.session_state.get("selected_wallet"):
+            st.write(f"**Wallet:** {st.session_state.get('selected_wallet')}")
+        
+        current_results = st.session_state.get("current_results", [])
+        selected_instruments = st.session_state.get("selected_instruments", [])
+        
+        if current_results:
+            st.write(f"**Current Results:** {len(current_results)} instruments found")
+        if selected_instruments:
+            st.write(f"**Selected:** {len(selected_instruments)} instruments")
+            
+        if st.session_state.get("search_history"):
+            st.write(f"**Total Searches:** {len(st.session_state.search_history)}")
 
 # Display past messages from session state
 for message in st.session_state.messages:
@@ -119,32 +233,33 @@ for message in st.session_state.messages:
             st.markdown(message["content"])
 
 # --- USER INPUT & AGENT RESPONSE ---
-if prompt := st.chat_input("Ask anything about the Satrix Entity Onboarding process..."):
-    # Add user message to session state and display it
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar=get_user_avatar_path()):
-        st.markdown(prompt)
+if prompt := st.chat_input("Ask anything about the Smart Instrument Finder process..."):
+    generate_agent_response(prompt)
 
-    # --- GENERATE AGENT RESPONSE ---
-    with st.chat_message("assistant", avatar=get_favicon_path()):
-        message_placeholder = st.empty()
-        full_response = ""
-        try:
-            # Construct the full conversation history for the model
-            conversation_history = [
-                {'role': 'user', 'parts': [SYSTEM_PROMPT]}
-            ]
-            # Add previous messages, ensuring the format is correct
-            for msg in st.session_state.messages:
-                 conversation_history.append({'role': msg['role'], 'parts': [msg['content']]})
-            # Generate content using the model
-            response = model.generate_content(conversation_history)
-            # Stream the response to the UI
-            full_response = response.text
-            message_placeholder.markdown(full_response)
-        except Exception as e:
-            st.error(f"An error occurred with the AI model: {e}")
-            full_response = "Sorry, I encountered an error. Please try again."
-            message_placeholder.markdown(full_response)
-    # Add the final assistant response to session state
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+# --- QUICK ACTIONS ---
+if not st.session_state.messages:  # Only show on first visit
+    st.markdown("### Quick Questions")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("How do I search for instruments?", use_container_width=True):
+            generate_agent_response("How do I search for instruments?")
+    
+    with col2:
+        if st.button("What wallets are available?", use_container_width=True):
+            generate_agent_response("What wallets are available and how do I choose?")
+    
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        if st.button("Why can't I find my instrument?", use_container_width=True):
+            generate_agent_response("Why can't I find my instrument?")
+    
+    with col4:
+        current_results = st.session_state.get("current_results", [])
+        if current_results:
+            if st.button("Help me understand my results", use_container_width=True):
+                generate_agent_response("Can you help me understand my current search results?")
+        else:
+            if st.button("How to get better results?", use_container_width=True):
+                generate_agent_response("How can I get better search results?")

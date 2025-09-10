@@ -2,3 +2,6 @@ streamlit
 reportlab 
 google-generativeai
 streamlit-lottie
+pandas
+fuzzywuzzy
+python-Levenshtein

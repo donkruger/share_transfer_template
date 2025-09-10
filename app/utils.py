@@ -1,53 +1,204 @@
 # app/utils.py
+"""
+Smart Instrument Finder - Utility Functions
+Enhanced session state management with namespace isolation and robust persistence.
+"""
 
 import base64
 import re
 from pathlib import Path
-from typing import List
+from typing import List, Any, Dict, Optional
 import streamlit as st
 import datetime
-
-# Import controlled lists from enhanced centralized module
-from app.controlled_lists_enhanced import (
-    get_entity_types,
-    get_source_of_funds_options,
-    get_industry_options,
-    get_countries,
-    get_member_role_options
-)
-
-# Export for backwards compatibility
-ENTITY_TYPES = get_entity_types(include_empty=False, return_codes=False)
-SOURCE_OF_FUNDS_OPTIONS = get_source_of_funds_options(include_empty=False, return_codes=False)
-INDUSTRY_OPTIONS = get_industry_options(include_empty=False, return_codes=False)
-COUNTRIES = get_countries(include_empty=False, return_codes=False)
-MEMBER_ROLE_OPTIONS = get_member_role_options(include_empty=False, return_codes=False)
-
-def sanitize_ns(label: str) -> str:
-    """Sanitize a label to create a valid namespace identifier."""
-    return re.sub(r'[^a-z0-9_]', '', label.strip().lower().replace(' ', '_'))
+import pandas as pd
+import uuid
 
 def current_namespace() -> str:
-    """Get the current entity type namespace."""
-    return sanitize_ns(st.session_state.get("entity_type", ENTITY_TYPES[0]))
+    """Return current namespace for component isolation."""
+    return "instrument_finder"
 
-def ns_key(ns: str, key: str) -> str:
-    """Create a namespaced key for session state."""
-    return f"{ns}__{key}"
+def ns_key(namespace: str, key: str) -> str:
+    """Create namespaced key for session state isolation."""
+    return f"{namespace}__{key}"
 
-def inst_key(ns: str, instance_id: str, key: str) -> str:
-    """Namespace a key for a specific component instance (e.g., 'directors')."""
-    return ns_key(ns, f"{instance_id}__{key}")
-
-def _cleanup_legacy_values():
-    """Clean up any legacy session state values that might cause errors."""
-    # Clean up any province values that might be set to "Other" which is no longer valid
-    keys_to_check = [k for k in st.session_state.keys() if k.endswith("__province")]
-    for key in keys_to_check:
-        if st.session_state.get(key) == "Other":
-            st.session_state[key] = ""
+def generate_session_id() -> str:
+    """Generate unique session identifier for tracking."""
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"session_{timestamp}_{str(uuid.uuid4())[:8]}"
 
 def initialize_state():
+    """
+    Initialize all required session state variables with namespace isolation.
+    Implements enterprise-grade session management patterns with enhanced selection persistence.
+    """
+    if 'state_initialized' not in st.session_state:
+        # User information
+        st.session_state.setdefault("user_name", "")
+        st.session_state.setdefault("user_id", "") 
+        st.session_state.setdefault("selected_wallet", None)
+        st.session_state.setdefault("selected_wallet_id", None)
+        
+        # Search functionality (temporary state - cleared on new search)
+        st.session_state.setdefault("search_history", [])
+        st.session_state.setdefault("current_results", [])
+        st.session_state.setdefault("last_search_query", "")
+        st.session_state.setdefault("search_preferences", {})
+        
+        # Selection functionality (persistent state - survives searches)
+        st.session_state.setdefault("selected_instruments", [])  # PERSISTENT across searches
+        st.session_state.setdefault("selection_metadata", {      # Enhanced selection tracking
+            "total_selected": 0,
+            "selection_timestamps": {},   # When each instrument was selected
+            "selection_sources": {},      # Which search query led to each selection
+            "last_modified": None
+        })
+        
+        # User workflow state
+        st.session_state.setdefault("selection_mode", "accumulate")  # "accumulate" | "replace" | "review"
+        st.session_state.setdefault("show_selection_panel", True)    # Whether to show persistent selection panel
+        st.session_state.setdefault("show_selection_details", False) # Whether to show detailed selection list
+        
+        # Multi-page navigation
+        st.session_state.setdefault("messages", [])  # AI Assistant chat
+        st.session_state.setdefault("submission_notes", "")
+        
+        # Data caching
+        st.session_state.setdefault("instruments_df", None)
+        st.session_state.setdefault("wallet_config", None)
+        
+        # Session metadata  
+        st.session_state.setdefault("session_id", generate_session_id())
+        st.session_state.setdefault("page_visits", {"main": 0, "ai_assistance": 0, "submit": 0})
+        
+        # Selection management flags
+        st.session_state.setdefault("confirm_clear_selections", False)
+        st.session_state.setdefault("confirm_clear_all", False)
+        
+        st.session_state.state_initialized = True
+
+@st.cache_data
+def load_instruments_data(csv_path: str) -> pd.DataFrame:
+    """
+    Load and preprocess instruments CSV data with caching.
+    Handles large datasets efficiently.
+    """
+    try:
+        df = pd.read_csv(csv_path, low_memory=False)
+
+        # Normalize column names for easier programmatic access
+        columns = list(df.columns)
+
+        # Data cleaning and preprocessing
+        df['Name'] = df.get('Name', '').fillna('').astype(str)
+        df['Ticker'] = df.get('Ticker', '').fillna('').astype(str)
+        df['Exchange'] = df.get('Exchange', '').fillna('').astype(str)
+        df['ContractCode'] = df.get('ContractCode', '').fillna('').astype(str)
+        df['ISINCode'] = df.get('ISINCode', '').fillna('').astype(str)
+
+        df['ActiveData'] = pd.to_numeric(df.get('ActiveData', 0), errors='coerce').fillna(0)
+
+        # Build accountFiltersArray from 22 wrapper columns when missing or empty
+        # Identify wrapper columns that start with 'accountFilters/'
+        wrapper_cols = [c for c in columns if c.startswith('accountFilters/')]
+
+        def derive_filters_array(row) -> str:
+            codes: list[str] = []
+            for c in wrapper_cols:
+                val = row.get(c)
+                try:
+                    ival = int(val)
+                except Exception:
+                    continue
+                if ival and ival != 0:
+                    codes.append(str(ival))
+            # Deduplicate while preserving order
+            seen = set()
+            deduped: list[str] = []
+            for code in codes:
+                if code not in seen:
+                    seen.add(code)
+                    deduped.append(code)
+            return ','.join(deduped)
+
+        # If accountFiltersArray exists, keep non-empty; else derive
+        if 'accountFiltersArray' in df.columns:
+            df['accountFiltersArray'] = df['accountFiltersArray'].fillna('').astype(str)
+            if wrapper_cols:
+                derived = df.apply(derive_filters_array, axis=1)
+                df.loc[df['accountFiltersArray'].str.strip() == '', 'accountFiltersArray'] = derived[df['accountFiltersArray'].str.strip() == '']
+        else:
+            if wrapper_cols:
+                df['accountFiltersArray'] = df.apply(derive_filters_array, axis=1)
+            else:
+                df['accountFiltersArray'] = ''
+
+        # Filter active instruments only
+        active_df = df[df['ActiveData'] != 0].copy()
+        
+        return active_df
+        
+    except Exception as e:
+        st.error(f"Error loading instruments data: {e}")
+        return pd.DataFrame()
+
+def add_to_search_history(query: str, results_count: int, wallet: str):
+    """Track search history for analytics and user experience."""
+    if 'search_history' not in st.session_state:
+        st.session_state.search_history = []
+    
+    search_entry = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'query': query,
+        'results_count': results_count,
+        'wallet': wallet,
+        'session_id': st.session_state.get('session_id', 'unknown')
+    }
+    
+    st.session_state.search_history.append(search_entry)
+    
+    # Keep only last 50 searches to manage memory
+    if len(st.session_state.search_history) > 50:
+        st.session_state.search_history = st.session_state.search_history[-50:]
+
+def clear_search_results():
+    """Clear current search results ONLY, preserve selections."""
+    st.session_state.current_results = []
+    # ✅ DO NOT clear selected_instruments - selections persist across searches
+
+def get_favicon_path():
+    """Returns the path to the favicon for chat avatars."""
+    favicon_path = Path(__file__).resolve().parent.parent / "assets" / "logos" / "favicon.svg"
+    return str(favicon_path) if favicon_path.exists() else ""
+
+def persist_widget(widget_func, label: str, state_key: str, **kwargs):
+    """Enhanced widget persistence with error handling."""
+    tmp_key = f"_{state_key}"
+    
+    # Initialize temp key from persistent state
+    if tmp_key not in st.session_state and state_key in st.session_state:
+        st.session_state[tmp_key] = st.session_state[state_key]
+
+    def _store_value():
+        if tmp_key in st.session_state:
+            st.session_state[state_key] = st.session_state[tmp_key]
+
+    try:
+        widget_func(label, key=tmp_key, on_change=_store_value, **kwargs)
+        return st.session_state.get(state_key)
+    except Exception as e:
+        st.error(f"Widget error for {label}: {e}")
+        return st.session_state.get(state_key)
+
+def persist_text_input(label: str, state_key: str, **kwargs) -> str:
+    return persist_widget(st.text_input, label, state_key, **kwargs) or ""
+
+def persist_selectbox(label: str, state_key: str, **kwargs) -> Any:
+    return persist_widget(st.selectbox, label, state_key, **kwargs)
+
+def persist_text_area(label: str, state_key: str, **kwargs) -> str:
+    return persist_widget(st.text_area, label, state_key, **kwargs) or ""
+
+def _legacy_initialize_state():
     """Initializes all required session state variables using setdefault."""
     if 'state_initialized' not in st.session_state:
         

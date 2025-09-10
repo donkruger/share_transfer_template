@@ -1,0 +1,45 @@
+{
+    "fuzzy_search": {
+        "default_threshold": 80,
+        "ticker_threshold": 60,
+        "isin_threshold": 85,
+        "max_results": 50,
+        "search_modes": {
+            "smart": {
+                "exact_weight": 1.0,
+                "fuzzy_weight": 0.8,
+                "ticker_weight": 0.9
+            },
+            "exact_only": {
+                "exact_weight": 1.0,
+                "fuzzy_weight": 0.0,
+                "ticker_weight": 0.0
+            },
+            "fuzzy_only": {
+                "exact_weight": 0.0,
+                "fuzzy_weight": 1.0,
+                "ticker_weight": 0.0
+            }
+        }
+    },
+    "display_settings": {
+        "results_per_page": 25,
+        "show_relevance_scores": true,
+        "show_match_types": true,
+        "highlight_exact_matches": true
+    },
+    "search_fields": {
+        "primary": [
+            "Name",
+            "Ticker"
+        ],
+        "secondary": [
+            "ISINCode"
+        ],
+        "metadata": [
+            "AssetType",
+            "Exchange",
+            "TradingCurrency"
+        ]
+    }
+}
