@@ -19,56 +19,53 @@ class SearchInterface:
         """
         Render the search interface and return search parameters.
         """
-        st.markdown("### Intelligent Instrument Search")
+        # st.markdown("### Intelligent Instrument Search") - REMOVED
         
-        # Use form to enable Enter key functionality
-        with st.form(key=f"{key_prefix}_form"):
-            # Main search input
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                search_query = st.text_input(
-                    "Search by instrument name, ticker, or ISIN",
-                    key=f"{key_prefix}_input",
-                    placeholder=self.placeholder_text,
-                    help="Enter any part of the instrument name, ticker symbol, or ISIN code (Press Enter to search)"
-                )
-            
-            with col2:
-                search_button = st.form_submit_button("Smart Search", type="primary", use_container_width=True)
+        # Simplified search input - no form, triggers on change
+        search_query = st.text_input(
+            "Search by instrument name, ticker, or ISIN",
+            key=f"{key_prefix}_input",
+            placeholder=self.placeholder_text,
+            help="Enter any part of the instrument name, ticker symbol, or ISIN code"
+        )
         
-        # Clear button outside the form so it doesn't interfere with Enter key behavior
+        # Clear button
         clear_button = st.button("Clear Results", on_click=self._clear_results, 
                                 help="Clear current search results only")
         
-        # Advanced search options
-        with st.expander("Search Options", expanded=False):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                fuzzy_threshold = st.slider(
-                    "Fuzzy Match Threshold", 
-                    60, 100, 80, 5,
-                    key=f"{key_prefix}_threshold",
-                    help="Lower values return more results but may be less relevant"
-                )
-            with col2:
-                max_results = st.slider(
-                    "Maximum Results", 
-                    10, 100, 50, 10,
-                    key=f"{key_prefix}_max_results",
-                    help="Limit the number of search results"
-                )
-            with col3:
-                search_mode = st.selectbox(
-                    "Search Mode", 
-                    ["Smart (Recommended)", "Exact Only", "Fuzzy Only"],
-                    key=f"{key_prefix}_mode",
-                    help="Choose search strategy"
-                )
+        # Advanced search options - COMMENTED OUT
+        # with st.expander("Search Options", expanded=False):
+        #     col1, col2, col3 = st.columns(3)
+        #     with col1:
+        #         fuzzy_threshold = st.slider(
+        #             "Fuzzy Match Threshold", 
+        #             60, 100, 80, 5,
+        #             key=f"{key_prefix}_threshold",
+        #             help="Lower values return more results but may be less relevant"
+        #         )
+        #     with col2:
+        #         max_results = st.slider(
+        #             "Maximum Results", 
+        #             10, 100, 50, 10,
+        #             key=f"{key_prefix}_max_results",
+        #             help="Limit the number of search results"
+        #         )
+        #     with col3:
+        #         search_mode = st.selectbox(
+        #             "Search Mode", 
+        #             ["Smart (Recommended)", "Exact Only", "Fuzzy Only"],
+        #             key=f"{key_prefix}_mode",
+        #             help="Choose search strategy"
+        #         )
+        
+        # Default values for commented out options
+        fuzzy_threshold = 80
+        max_results = 50
+        search_mode = "Smart (Recommended)"
         
         search_params = {
             'query': search_query,
-            'search_triggered': search_button,  # Form submit button handles both click and Enter key
+            'search_triggered': bool(search_query and search_query.strip()),  # Trigger search when there's input
             'clear_triggered': clear_button,
             'fuzzy_threshold': fuzzy_threshold,
             'max_results': max_results,

@@ -11,11 +11,13 @@ The Smart Instrument Finder App is a modern web application designed to help use
 - **Advanced Fuzzy Search**: Multi-field search across instrument names, ticker symbols, ISIN codes, and contract codes
 - **Wallet-Aware Filtering**: Filter instruments based on availability in specific investment wallets/platforms
 - **AI-Powered Assistance**: Contextual help and guidance using Google Gemini with RAG architecture
+- **Portfolio Configuration**: Complete share transfer data capture with AI-integration readiness
 - **Smart Deduplication**: Business-key based deduplication using (Exchange, Ticker, ContractCode)
 - **Real-time Results**: Fast, cached search with relevance scoring and ranking
-- **Export Capabilities**: Generate PDF reports and CSV exports of selected instruments
+- **Export Capabilities**: Generate PDF reports and CSV exports of selected instruments including share transfer format
 - **Session Persistence**: Robust state management across multiple pages
 - **Responsive Design**: Modern, gradient-based UI with smooth animations
+- **Multi-Format Export**: Standard instrument CSV and specialized share transfer CSV generation
 
 ## Architecture & Core Structure
 
@@ -32,22 +34,33 @@ Instrument Finder App V2/
 │   │   ├── feedback.py      # User feedback collection
 │   │   ├── result_display.py # Search results presentation
 │   │   ├── search_interface.py # Search input & options
+│   │   ├── selection_panel.py # Selection management UI
+│   │   ├── share_transfer_form.py # Portfolio data entry form
 │   │   ├── sidebar.py       # Navigation sidebar
 │   │   ├── submission.py    # Result submission handling
 │   │   └── wallet_selector.py # Wallet context selection
 │   ├── data/                # Configuration & specifications
 │   │   ├── __init__.py
+│   │   ├── broker_specifications.json # Broker ID mappings
+│   │   ├── portfolio_configurations.json # Portfolio defaults
+│   │   ├── portfolio_schema.json # AI integration schema
 │   │   ├── search_configurations.json # Search algorithm settings
 │   │   └── wallet_specifications.json # Wallet mappings & metadata
 │   ├── pages/               # Multi-page application structure
 │   │   ├── 1_AI_Assistance.py # RAG-powered AI assistant
-│   │   └── 2_Submit.py      # Results review & submission
+│   │   ├── 2_Portfolio.py   # Share transfer portfolio configuration
+│   │   └── 3_Submit.py      # Results review & submission
 │   ├── search/              # Core search engine
 │   │   ├── __init__.py
 │   │   ├── fuzzy_matcher.py # Advanced fuzzy matching algorithm
 │   │   └── wallet_filter.py # Wallet-aware filtering engine
+│   ├── services/            # Business logic layer
+│   │   ├── __init__.py
+│   │   ├── portfolio_service.py # Portfolio data management
+│   │   └── selection_manager.py # Selection state management
 │   ├── __init__.py
 │   ├── email_sender.py      # SMTP email functionality
+│   ├── json_validators.py   # JSON schema validation utilities
 │   ├── main.py              # Primary search interface (landing page)
 │   ├── pdf_generator.py     # PDF report generation
 │   ├── styling.py           # CSS styling & animations
@@ -77,13 +90,19 @@ graph TD
     G --> H[Result Selection]
     H --> I{User Choice}
     I -->|Need Help| J[AI Assistance Page]
-    I -->|Ready to Submit| K[Submit Results Page]
-    J --> L[RAG-Powered Guidance]
-    L --> I
-    K --> M[Review & Declaration]
-    M --> N[PDF/CSV Generation]
-    N --> O[Email Submission]
-    O --> P[Success & Downloads]
+    I -->|Configure Portfolio| K[Portfolio Page]
+    I -->|Ready to Submit| L[Submit Results Page]
+    J --> M[RAG-Powered Guidance]
+    M --> I
+    K --> N[Share Transfer Data Entry]
+    N --> O[Portfolio Validation]
+    O --> P{Complete?}
+    P -->|No| N
+    P -->|Yes| L
+    L --> Q[Review & Declaration]
+    Q --> R[Enhanced PDF/CSV Generation]
+    R --> S[Email Submission with Attachments]
+    S --> T[Success & Downloads]
 ```
 
 ### Technical Stack
@@ -188,14 +207,24 @@ An intelligent assistant that provides:
 - Investment guidance within defined knowledge boundaries
 - Wallet-specific recommendations
 
-### 3. Submit Results Page
+### 3. Portfolio Configuration Page
+
+Comprehensive share transfer data capture featuring:
+- Individual portfolio entry configuration for each selected instrument
+- Trust Account ID, quantity, and pricing data entry
+- Settlement dates and broker ID specification
+- Data validation and completeness tracking
+- Progress indicators and batch configuration options
+- AI-integration readiness for future PDF processing
+
+### 4. Submit Results Page
 
 Final submission workflow featuring:
-- Review of selected instruments
+- Review of selected instruments and portfolio configurations
 - Additional notes and feedback collection
 - Declaration acceptance
-- Automated PDF and CSV generation
-- Email delivery to configured recipients
+- Automated PDF and multi-format CSV generation (instruments + share transfer)
+- Email delivery with comprehensive attachments
 
 ## Key Business Logic & Algorithms
 
@@ -254,6 +283,61 @@ MATCH_PRIORITIES = {
 def calculate_final_score(match_type: str, fuzzy_score: int) -> int:
     priority, base_score = MATCH_PRIORITIES[match_type]
     return base_score if base_score != 'dynamic' else fuzzy_score
+```
+
+### Portfolio Data Management
+
+The application includes a sophisticated portfolio configuration system for share transfer data capture:
+
+```python
+# Portfolio Entry Structure
+portfolio_entry = {
+    # Core Fields (Required)
+    'platform': 'EE',              # EE or SX
+    'trust_account_id': '8275727', # 6-10 digits
+    'quantity': -4,                # Can be negative
+    'base_cost': 5574.403385,      # Per unit cost
+    'settlement_date': '2025-09-10', # YYYY-MM-DD
+    'last_price': 10863.00,        # Current price
+    'broker_from': '9',            # Source broker ID
+    'broker_to': '26',             # Destination broker ID
+    
+    # AI Integration Fields (Future PDF Processing)
+    'data_source': 'manual_entry', # Source type
+    'ai_confidence': None,         # Overall confidence
+    'source_document': None,       # Source PDF if applicable
+}
+```
+
+### Share Transfer CSV Generation
+
+```python
+# Target CSV Format Output
+def generate_share_transfer_csv() -> str:
+    """Generates CSV in exact broker-required format."""
+    # Headers: SX/EE,User ID ,TrustAccountID,ShareCode,InstrumentID,Qty,Base Cost ©,Excel Date,SettlementDate,Last Price,BrokerID_From,BrokerID_To,Reference,,
+    # Example: EE,1809263,8275727,STXWDM,2827,-4,5574.403385,2025/09/10,2025-09-10,10863.00,9 ,26 ,NT -2025-09-10,NT -,2025/09/10
+```
+
+### Portfolio Service Architecture
+
+```python
+# Core Portfolio Management Service
+class PortfolioService:
+    @staticmethod
+    def save_portfolio_entry(instrument_id: str, portfolio_data: Dict) -> bool
+    
+    @staticmethod
+    def get_portfolio_entry(instrument_id: str) -> Optional[Dict]
+    
+    @staticmethod
+    def is_portfolio_complete() -> bool
+    
+    @staticmethod
+    def generate_share_transfer_data() -> List[Dict]
+    
+    @staticmethod
+    def import_ai_portfolio_data(json_data: Dict) -> Dict[str, Any]  # Future PDF processing
 ```
 
 ## Production Deployment Considerations
@@ -385,6 +469,14 @@ Handles:
 - Account filter parsing from CSV data
 - Dynamic wallet list generation
 
+#### Portfolio Service (`app/services/portfolio_service.py`)
+
+Manages:
+- Portfolio data persistence and validation
+- Share transfer CSV generation in exact broker format
+- AI integration readiness for future PDF processing
+- Business logic for portfolio completeness tracking
+
 #### Session Management (`app/utils.py`)
 
 Provides:
@@ -392,6 +484,14 @@ Provides:
 - Persistent widget helpers
 - Session tracking and analytics
 - Robust data loading with caching
+
+#### Selection Manager (`app/services/selection_manager.py`)
+
+Handles:
+- Cross-page instrument selection persistence
+- Selection metadata and source tracking
+- Duplicate prevention and selection validation
+- Selection summary and statistics
 
 ## Technical Implementation Deep Dive
 
@@ -471,6 +571,15 @@ st.session_state = {
     "selected_instruments": List[Dict],  # Persists across searches
     "submission_notes": str,
     
+    # Portfolio State (New)
+    "portfolio_entries": Dict[str, Dict],  # Keyed by instrument_id
+    "portfolio_metadata": {
+        "default_platform": "EE",
+        "default_broker_from": "9", 
+        "default_broker_to": "26",
+        "last_updated": str
+    },
+    
     # AI Assistant State
     "messages": List[Dict],  # Chat history
     
@@ -539,6 +648,8 @@ class ComponentName:
 **Component Responsibilities:**
 - **`search_interface.py`**: Search input, options, and triggers
 - **`result_display.py`**: Results presentation and selection management
+- **`selection_panel.py`**: Cross-page selection persistence and management UI
+- **`share_transfer_form.py`**: Portfolio data entry form with validation
 - **`wallet_selector.py`**: Wallet context selection and user onboarding
 - **`submission.py`**: Result processing, PDF/CSV generation, email sending
 - **`sidebar.py`**: Navigation and branding
@@ -569,27 +680,37 @@ sequenceDiagram
     RD->>SS: update selected_instruments
 ```
 
-#### Submission Flow
+#### Enhanced Submission Flow (with Portfolio)
 ```mermaid
 sequenceDiagram
     participant U as User
+    participant PP as PortfolioPage
+    participant PS as PortfolioService
     participant SP as SubmitPage
     participant SC as SubmissionComponent
     participant PG as PDFGenerator
     participant ES as EmailSender
     participant SS as SessionState
     
+    U->>PP: configure_portfolio
+    PP->>PS: save_portfolio_entry(instrument_id, data)
+    PS->>SS: store portfolio_entries
+    PS-->>PP: validation_result
+    PP->>PS: is_portfolio_complete()
+    PS-->>PP: completion_status
     U->>SP: navigate_to_submit
-    SP->>SS: get selected_instruments
-    SS-->>SP: instruments_list
+    SP->>SS: get selected_instruments + portfolio_data
+    SS-->>SP: complete_submission_data
     SP->>U: display_review_interface
     U->>SP: accept_declaration_and_submit
-    SP->>SC: handle_search_results_submission()
-    SC->>PG: generate_pdf(submission_data)
+    SP->>SC: handle_portfolio_submission()
+    SC->>PS: generate_share_transfer_data()
+    PS-->>SC: csv_data
+    SC->>PG: generate_pdf(enhanced_data)
     PG-->>SC: pdf_bytes
-    SC->>ES: send_email(submission_data, pdf)
+    SC->>ES: send_email(data, pdf, instruments_csv, transfer_csv)
     ES-->>SC: email_confirmation
-    SC->>U: success_message_and_downloads
+    SC->>U: success_with_multi_format_downloads
 ```
 
 ### Configuration Management
@@ -633,6 +754,57 @@ sequenceDiagram
     "results_per_page": 25,
     "show_relevance_scores": true,
     "highlight_exact_matches": true
+  }
+}
+```
+
+#### Portfolio Schema (`app/data/portfolio_schema.json`)
+
+```json
+{
+  "metadata": {
+    "source": "manual_entry",
+    "confidence_score": 1.0,
+    "extraction_timestamp": "2024-01-15T10:30:00Z"
+  },
+  "portfolio_entries": [
+    {
+      "instrument_identifier": {
+        "ticker": "AAPL"
+      },
+      "portfolio_data": {
+        "trust_account_id": "1234567",
+        "quantity": 100,
+        "base_cost": 150.50,
+        "settlement_date": "2024-01-10",
+        "last_price": 160.75,
+        "broker_from": "9",
+        "broker_to": "26"
+      }
+    }
+  ]
+}
+```
+
+#### Broker Specifications (`app/data/broker_specifications.json`)
+
+```json
+{
+  "brokers": {
+    "9": {
+      "name": "EasyEquities",
+      "type": "source",
+      "active": true
+    },
+    "26": {
+      "name": "Satrix",
+      "type": "destination", 
+      "active": true
+    }
+  },
+  "default_mappings": {
+    "default_from": "9",
+    "default_to": "26"
   }
 }
 ```
@@ -692,6 +864,10 @@ To extend the application:
 2. **Additional Wallets**: Update `wallet_specifications.json`
 3. **UI Components**: Create new components in `app/components/`
 4. **Data Sources**: Extend `load_instruments_data()` in `utils.py`
+5. **Portfolio Fields**: Add validation rules in `portfolio_service.py`
+6. **Broker Integration**: Update `broker_specifications.json`
+7. **AI Processing**: Extend `portfolio_schema.json` for new data types
+8. **Export Formats**: Modify CSV generation methods in `submission.py`
 
 ## Data Requirements
 
@@ -735,6 +911,56 @@ The application handles:
 - Large datasets: Increase caching limits in Streamlit configuration
 - Slow searches: Adjust fuzzy thresholds and result limits
 - Memory usage: Regular session state cleanup for long-running sessions
+
+## Portfolio Feature
+
+### Current Capabilities
+
+The Portfolio feature provides comprehensive share transfer data management:
+
+- **Manual Data Entry**: Complete form-based portfolio configuration for each selected instrument
+- **Data Validation**: Multi-layer validation ensuring data integrity and compliance
+- **Progress Tracking**: Visual indicators showing portfolio configuration completeness
+- **Flexible Export**: Multiple CSV formats including broker-specific share transfer format
+- **Session Persistence**: Portfolio data persists across browser sessions
+
+### Data Fields Captured
+
+| Field | Type | Validation | Description |
+|-------|------|------------|-------------|
+| Platform | Select | EE/SX | Trading platform identifier |
+| Trust Account ID | Text | 6-10 digits | Account identifier |
+| Quantity | Number | Non-zero | Share quantity (can be negative) |
+| Base Cost | Decimal | Positive | Cost per share |
+| Settlement Date | Date | Valid date | Transaction settlement date |
+| Last Price | Decimal | Positive | Current market price |
+| Broker From | Select | Valid broker | Source broker ID |
+| Broker To | Select | Valid broker | Destination broker ID |
+
+### Export Formats
+
+1. **Standard Instruments CSV**: Complete instrument details with search metadata
+2. **Share Transfer CSV**: Broker-specific format with exact column specifications
+3. **Combined PDF Report**: Human-readable summary of all data
+
+### Future AI Integration
+
+The Portfolio feature is architected for future PDF processing capabilities:
+
+- **JSON Schema Ready**: Standardized data contracts for AI agents
+- **Confidence Scoring**: Framework for AI extraction confidence tracking
+- **Manual Review Interface**: UI patterns for reviewing AI-extracted data
+- **Batch Processing**: Architecture supports bulk data import from documents
+
+### Workflow Integration
+
+Portfolio configuration integrates seamlessly with the main application workflow:
+
+1. **Search & Select**: Users find and select instruments
+2. **Configure Portfolio**: Complete share transfer data for each instrument  
+3. **Validate & Review**: System validates all entries and shows completion status
+4. **Submit**: Enhanced submission generates multiple export formats
+5. **Email Delivery**: Attachments include all formats for downstream processing
 
 ## Contributing
 

@@ -11,6 +11,22 @@ def render_feedback_component() -> Optional[Dict[str, Any]]:
     """
     with st.expander("💬 Share Your Feedback (Optional)", expanded=False):
         st.markdown("""
+        <style>
+            .callout-info {
+                background-color: #ed1847 !important;
+                color: white !important;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .callout-info p {
+                margin: 0.5rem 0;
+                color: white !important;
+            }
+            .callout-info strong {
+                color: white !important;
+            }
+        </style>
         <div class="callout-info">
             <p><strong>Help us improve our service</strong></p>
             <p>Your feedback is valuable and completely optional. It will be included with your submission.</p>
@@ -22,7 +38,7 @@ def render_feedback_component() -> Optional[Dict[str, Any]]:
         if "feedback_entity_name" not in st.session_state and "entity_display_name" in st.session_state:
             st.session_state["feedback_entity_name"] = st.session_state["entity_display_name"]
             
-        entity_name = persist_text_input("Entity Name", "feedback_entity_name")
+        entity_name = persist_text_input("Name", "feedback_entity_name")
         
         email = persist_text_input("Email", "feedback_email")
         

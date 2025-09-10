@@ -7,7 +7,7 @@ import streamlit as st
 from app.pdf_generator import make_pdf
 from app.email_sender import send_submission_email
 
-def handle_search_results_submission(selected_instruments: List[Dict], user_info: Dict[str, str], submission_notes: str = ""):
+def handle_search_results_submission(selected_instruments: List[Dict], user_info: Dict[str, str], submission_notes: str = "", feedback_data: Dict = None):
     """Handles the search results submission, generating PDF, sending email, and showing download options."""
     
     if not selected_instruments:
@@ -35,6 +35,7 @@ def handle_search_results_submission(selected_instruments: List[Dict], user_info
             },
             "selected_instruments": selected_instruments,
             "submission_notes": submission_notes,
+            "feedback_data": feedback_data,
             "submission_timestamp": datetime.datetime.now().isoformat()
         }
 
@@ -89,7 +90,7 @@ def send_search_results_email(submission_data: Dict[str, Any]):
     """Send search results via email."""
     # This will use the existing email infrastructure
     # For now, we'll use the existing send_submission_email function
-    send_submission_email(submission_data, [])
+    send_submission_email(submission_data, [], feedback_data=submission_data.get('feedback_data'))
 
 
 def make_search_results_pdf(submission_data: Dict[str, Any]) -> bytes:
@@ -136,7 +137,8 @@ def generate_instruments_csv(instruments: List[Dict]) -> str:
 def handle_portfolio_submission(
     selected_instruments: List[Dict], 
     user_info: Dict, 
-    submission_notes: str
+    submission_notes: str,
+    feedback_data: Dict = None
 ) -> None:
     """
     Enhanced submission handler following existing submission.py patterns.
@@ -162,6 +164,7 @@ def handle_portfolio_submission(
                 },
                 "selected_instruments": selected_instruments,
                 "submission_notes": submission_notes,
+                "feedback_data": feedback_data,
                 "portfolio_data": PortfolioService.get_all_portfolio_entries(),
                 "submission_timestamp": datetime.datetime.now().isoformat()
             }
@@ -291,7 +294,15 @@ Portfolio Summary:
 • Portfolio Entries: {len(share_transfer_data)}
 • Additional Notes: {submission_data.get('submission_notes', 'None provided')}
 
-Attachments:
+"""
+        
+        # Add feedback section if provided
+        feedback_data = submission_data.get('feedback_data')
+        if feedback_data and feedback_data.get('submitted'):
+            from app.email_sender import format_feedback_section
+            body += format_feedback_section(feedback_data)
+        
+        body += f"""Attachments:
 • PDF Report: Complete portfolio summary
 • Instruments CSV: Selected instruments details
 • Share Transfer CSV: Portfolio data in target format

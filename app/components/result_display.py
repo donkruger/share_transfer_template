@@ -23,10 +23,10 @@ class ResultDisplayComponent:
             self._render_no_results()
             return []
         
-        st.markdown(f"### Search Results ({len(results)} found)")
+        # st.markdown(f"### Search Results ({len(results)} found)") - COMMENTED OUT
         
-        # Results summary
-        self._render_results_summary(results)
+        # Results summary - COMMENTED OUT
+        # self._render_results_summary(results)
         
         # Results display
         selected_instruments = []
@@ -86,7 +86,7 @@ class ResultDisplayComponent:
                             st.rerun()
                     else:
                         # Show selection checkbox
-                        selected = st.checkbox("Select", key=f"select_{idx}", 
+                        selected = st.checkbox("", key=f"select_{idx}", 
                                              help="Add to your instrument portfolio")
                         if selected:
                             success = SelectionManager.add_instrument(
@@ -112,22 +112,22 @@ class ResultDisplayComponent:
                 asset_type = result.get('asset_type', 'N/A')
                 exchange = result.get('exchange', 'N/A')
                 st.text(f"{asset_type} • {exchange}")
-                st.caption(f"Relevance: {result.get('relevance_score', 0)}%")
+                # st.caption(f"Relevance: {result.get('relevance_score', 0)}%") - COMMENTED OUT
             
             with col4 if allow_selection else col3:
                 # Available wallets for this instrument
                 self._render_wallet_availability(result)
             
-            # Show selection metadata for already selected items
-            if is_already_selected and allow_selection:
-                metadata = SelectionManager.get_selection_metadata(result)
-                if metadata.get('selected_at'):
-                    selected_time = metadata['selected_at'][:19].replace('T', ' ')
-                    st.caption(f"Selected: {selected_time}")
-                if metadata.get('source_query'):
-                    st.caption(f"From search: '{metadata['source_query']}'")
+            # Show selection metadata for already selected items - COMMENTED OUT TO REDUCE HEIGHT
+            # if is_already_selected and allow_selection:
+            #     metadata = SelectionManager.get_selection_metadata(result)
+            #     if metadata.get('selected_at'):
+            #         selected_time = metadata['selected_at'][:19].replace('T', ' ')
+            #         st.caption(f"Selected: {selected_time}")
+            #     if metadata.get('source_query'):
+            #         st.caption(f"From search: '{metadata['source_query']}'")
             
-        st.divider()
+        st.markdown("---")  # Shorter divider instead of st.divider()
         return selection_changed
     
     def _render_wallet_availability(self, result: Dict):
@@ -188,8 +188,8 @@ def render_selection_summary():
             if st.button("Get AI Assistance", use_container_width=True):
                 st.switch_page("pages/1_AI_Assistance.py")
         with col2:
-            if st.button("Proceed to Submit", type="primary", use_container_width=True):
-                st.switch_page("pages/3_Submit.py")
+            if st.button("Configure Portfolio", type="primary", use_container_width=True):
+                st.switch_page("pages/2_Portfolio.py")
         with col3:
             if st.button("Clear All Selections", type="secondary", use_container_width=True):
                 if st.session_state.get('confirm_clear_selections', False):

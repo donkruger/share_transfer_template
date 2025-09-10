@@ -22,6 +22,83 @@ def format_feedback_section(feedback_data: Dict[str, Any]) -> str:
     section += "--- END FEEDBACK ---\n\n"
     return section
 
+def send_search_results_email_direct(submission_data: Dict[str, Any], feedback_data: Dict[str, Any] = None):
+    """Send search results submission email directly."""
+    try:
+        # --- Credentials ---
+        try:
+            sender_email = st.secrets["email"]["sender_email"]
+            sender_password = st.secrets["email"]["sender_password"]
+            smtp_server = st.secrets["email"].get("smtp_server", "smtp.gmail.com")
+            smtp_port = st.secrets["email"].get("smtp_port", 587)
+        except KeyError as ke:
+            st.error(f"Missing email credentials in secrets.toml: {ke}")
+            return
+        
+        recipient_email = "don.kruger123@gmail.com"
+        
+        # Extract information
+        user_info = submission_data.get("user_info", {})
+        user_name = user_info.get("user_name", "Unknown User")
+        user_id = user_info.get("user_id", "Unknown")
+        selected_wallet = user_info.get("selected_wallet", "Unknown")
+        selected_instruments = submission_data.get("selected_instruments", [])
+        submission_notes = submission_data.get("submission_notes", "")
+        
+        # --- Email Content ---
+        subject = f"Smart Instrument Finder: Search Results from {user_name}"
+        
+        body = f"A new search results submission has been received.\n\n"
+        body += f"User Details:\n"
+        body += f"• User Name: {user_name}\n"
+        body += f"• User ID: {user_id}\n"
+        body += f"• Wallet Context: {selected_wallet}\n"
+        body += f"• Selected Instruments: {len(selected_instruments)}\n\n"
+        
+        if submission_notes:
+            body += f"Additional Notes:\n{submission_notes}\n\n"
+        
+        body += f"Selected Instruments:\n"
+        for i, instrument in enumerate(selected_instruments, 1):
+            name = instrument.get('name', 'N/A')
+            ticker = instrument.get('ticker', 'N/A')
+            exchange = instrument.get('exchange', 'N/A')
+            asset_type = instrument.get('asset_type', 'N/A')
+            body += f"{i}. {name} ({ticker}) - {exchange} - {asset_type}\n"
+        body += "\n"
+        
+        # Add feedback section if provided
+        if feedback_data and feedback_data.get('submitted'):
+            body += format_feedback_section(feedback_data)
+        
+        body += f"This submission was processed on {submission_data.get('submission_timestamp', 'Unknown time')}\n\n"
+        body += f"Regards,\n"
+        body += f"Smart Instrument Finder\n"
+        body += f"EasyEquities"
+
+        # --- Create the Email Message ---
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        # --- Send the Email ---
+        st.info(f"📧 Attempting to send search results email to: {recipient_email}")
+        
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            st.info("📧 Search results email sent successfully via SMTP")
+        
+        st.success(f"Search results submission sent successfully!")
+        st.info(f"📧 Email sent to: {recipient_email}")
+
+    except Exception as e:
+        st.error(f"Failed to send search results email: {e}")
+        st.error("Please check your email configuration in .streamlit/secrets.toml and try again.")
+
 def send_submission_email_with_metadata(
     answers: Dict[str, Any],
     attachment_collector: 'AttachmentCollector',
@@ -186,7 +263,8 @@ def send_submission_email_with_metadata(
 
 def send_submission_email(
     answers: Dict[str, Any],
-    uploaded_files: List[Optional[st.runtime.uploaded_file_manager.UploadedFile]]
+    uploaded_files: List[Optional[st.runtime.uploaded_file_manager.UploadedFile]],
+    feedback_data: Dict[str, Any] = None
 ):
     """
     Backward compatibility wrapper for legacy email sending.
@@ -199,7 +277,13 @@ def send_submission_email(
     if hasattr(answers, '_attachment_collector'):
         # Use enhanced email sending
         attachment_collector = answers._attachment_collector
-        send_submission_email_with_metadata(answers, attachment_collector)
+        send_submission_email_with_metadata(answers, attachment_collector, feedback_data)
+        return
+    
+    # Check if this is a search results submission (different from entity onboarding)
+    if answers.get('selected_instruments'):
+        # This is a search results submission - use dedicated function
+        send_search_results_email_direct(answers, feedback_data)
         return
     
     # Create basic attachment collector for legacy calls
@@ -215,4 +299,4 @@ def send_submission_email(
                 person_identifier=f"Upload_{i+1}"
             )
     
-    send_submission_email_with_metadata(answers, attachment_collector)
+    send_submission_email_with_metadata(answers, attachment_collector, feedback_data)

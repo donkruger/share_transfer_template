@@ -236,30 +236,5 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("Ask anything about the Smart Instrument Finder process..."):
     generate_agent_response(prompt)
 
-# --- QUICK ACTIONS ---
-if not st.session_state.messages:  # Only show on first visit
-    st.markdown("### Quick Questions")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("How do I search for instruments?", use_container_width=True):
-            generate_agent_response("How do I search for instruments?")
-    
-    with col2:
-        if st.button("What wallets are available?", use_container_width=True):
-            generate_agent_response("What wallets are available and how do I choose?")
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        if st.button("Why can't I find my instrument?", use_container_width=True):
-            generate_agent_response("Why can't I find my instrument?")
-    
-    with col4:
-        current_results = st.session_state.get("current_results", [])
-        if current_results:
-            if st.button("Help me understand my results", use_container_width=True):
-                generate_agent_response("Can you help me understand my current search results?")
-        else:
-            if st.button("How to get better results?", use_container_width=True):
-                generate_agent_response("How can I get better search results?")
+# --- QUICK ACTIONS REMOVED ---
+# Quick Questions section has been removed for cleaner UI

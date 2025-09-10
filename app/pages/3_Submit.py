@@ -32,7 +32,7 @@ st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
 # Apply sidebar gradient styling to match main page
 st.markdown(SIDEBAR_GRADIENT_CSS, unsafe_allow_html=True)
 
-# Additional comprehensive spacing removal for this page
+# Additional comprehensive spacing removal for this page and custom button color
 st.markdown("""
 <style>
     /* Ensure gradient title sits flush at top */
@@ -45,6 +45,23 @@ st.markdown("""
     .main .block-container > div:first-child {
         margin-top: 0 !important;
         padding-top: 0 !important;
+    }
+    
+    /* Custom color for submit button to match brand color */
+    .stButton > button[data-testid="baseButton-primary"] {
+        background-color: #f4942a !important;
+        border-color: #f4942a !important;
+    }
+    
+    .stButton > button[data-testid="baseButton-primary"]:hover {
+        background-color: #e8530f !important;
+        border-color: #e8530f !important;
+    }
+    
+    .stButton > button[data-testid="baseButton-primary"]:focus {
+        background-color: #f4942a !important;
+        border-color: #f4942a !important;
+        box-shadow: 0 0 0 0.2rem rgba(244, 148, 42, 0.5) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -86,17 +103,17 @@ if not selected_instruments:
             st.switch_page("pages/1_AI_Assistance.py")
     st.stop()
 
-# Display user and context information with enhanced summary
-st.markdown("### Submission Details")
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.info(f"**User:** {user_name}")
-with col2:
-    st.info(f"**User ID:** {user_id}")
-with col3:
-    st.info(f"**Wallet Context:** {selected_wallet}")
-with col4:
-    st.info(f"**Instruments:** {len(selected_instruments)}")
+# Display user and context information with enhanced summary - COMMENTED OUT
+# st.markdown("### Submission Details")
+# col1, col2, col3, col4 = st.columns(4)
+# with col1:
+#     st.info(f"**User:** {user_name}")
+# with col2:
+#     st.info(f"**User ID:** {user_id}")
+# with col3:
+#     st.info(f"**Wallet Context:** {selected_wallet}")
+# with col4:
+#     st.info(f"**Instruments:** {len(selected_instruments)}")
 
 # Enhanced selection summary
 if selection_summary['total_count'] > 0:
@@ -278,6 +295,9 @@ if st.button("Submit Search Results",
         "declaration_accepted": declaration_accepted
     }
     
+    # Get feedback data from session state
+    feedback_data = st.session_state.get('feedback_data', None)
+    
     # Handle the submission with enhanced functionality
     try:
         if portfolio_complete:
@@ -285,14 +305,16 @@ if st.button("Submit Search Results",
             handle_portfolio_submission(
                 selected_instruments=selected_instruments,
                 user_info=user_info,
-                submission_notes=submission_notes
+                submission_notes=submission_notes,
+                feedback_data=feedback_data
             )
         else:
             # Use standard submission for backward compatibility
             handle_search_results_submission(
                 selected_instruments=selected_instruments,
                 user_info=user_info,
-                submission_notes=submission_notes
+                submission_notes=submission_notes,
+                feedback_data=feedback_data
             )
         
         # Clear selections and portfolio data after successful submission

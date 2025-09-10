@@ -424,15 +424,15 @@ def main():
 
     # Step 3: Search Interface (only show if user info and wallet are complete)
     if user_name and user_id and selected_wallet:
-        # Search Section Header
-        st.markdown("## Search for Instruments")
-        st.markdown(f"**Searching in:** {selected_wallet_info.get('display_name', selected_wallet)} • **User:** {user_name}")
+        # Search Section Header - REMOVED
+        # st.markdown("## Search for Instruments")
+        # st.markdown(f"**Searching in:** {selected_wallet_info.get('display_name', selected_wallet)} • **User:** {user_name}")
         
         # Search Interface
         search_params = search_interface.render()
         
-        # Search Tips
-        render_search_tips()
+        # Search Tips - COMMENTED OUT
+        # render_search_tips()
         
         # Perform Search
         if search_params['search_triggered'] and search_params['query'].strip():
@@ -458,7 +458,7 @@ def main():
         # Display Results
         current_results = st.session_state.get("current_results", [])
         if current_results:
-            st.info(f"Displaying {len(current_results)} search results...")
+            # st.info(f"Displaying {len(current_results)} search results...") - COMMENTED OUT
             # Display results with selection
             result_display.render_results(current_results, allow_selection=True)
             
@@ -474,36 +474,9 @@ def main():
             st.markdown("---")
             selection_panel.render_persistent_panel(location="main")
 
-    else:
-        # Show information about the app while user completes onboarding
-        with st.expander("About Smart Instrument Finder", expanded=not (user_name and user_id)):
-            st.markdown("""
-            This application helps you discover if instruments from your external investment 
-            portfolio are available within the EasyEquities ecosystem.
-            
-            **Advanced Search Features:**
-            - **Fuzzy Matching**: Find instruments even with partial or misspelled names
-            - **Multi-Field Search**: Search by name, ticker, or ISIN code
-            - **Wallet Filtering**: See only instruments available in your selected wallet
-            - **Relevance Scoring**: Results ranked by match quality
-            - **Real-time Results**: Instant search through thousands of instruments
-            
-            **Get Started:**
-            1. Enter your name and user ID in the sidebar
-            2. Select your wallet context  
-            3. Start searching for instruments
-            4. Review results and get AI assistance if needed
-            5. Submit your findings
-            
-            **Data Information:**
-            - **Total Instruments**: {total_instruments:,}
-            - **Active Instruments**: {active_instruments:,}
-            - **Available Wallets**: {total_wallets}
-            """.format(
-                total_instruments=len(instruments_df) if not instruments_df.empty else 0,
-                active_instruments=len(instruments_df[instruments_df['ActiveData'] != 0]) if not instruments_df.empty else 0,
-                total_wallets=len([w for w in wallet_config["wallet_mappings"].values() if w.get("active", True)])
-            ))
+    # else:
+        # Show information about the app while user completes onboarding - REMOVED
+        # About Smart Instrument Finder expandable card has been removed for cleaner UI
 
     # --- Footer ---
     st.markdown("---")
