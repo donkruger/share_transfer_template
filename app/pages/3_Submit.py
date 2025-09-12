@@ -32,6 +32,39 @@ st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
 # Apply sidebar gradient styling to match main page
 st.markdown(SIDEBAR_GRADIENT_CSS, unsafe_allow_html=True)
 
+# Fix sidebar metrics white background issue on this page
+st.markdown("""
+<style>
+    /* Remove white background from sidebar metrics - using correct selectors */
+    [data-testid="stSidebar"] .stMetric {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    [data-testid="stSidebar"] div[data-testid="metric-container"] {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Target the emotion-cache classes directly if needed */
+    [data-testid="stSidebar"] .st-emotion-cache-0,
+    [data-testid="stSidebar"] .e14qm3310,
+    [data-testid="stSidebar"] .e1f1d6gn0,
+    [data-testid="stSidebar"] [class*="st-emotion-cache"] {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Ensure all child elements are also transparent */
+    [data-testid="stSidebar"] .stMetric * {
+        background-color: transparent !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Additional comprehensive spacing removal for this page and custom button color
 st.markdown("""
 <style>

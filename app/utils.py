@@ -35,8 +35,8 @@ def initialize_state():
         # User information
         st.session_state.setdefault("user_name", "")
         st.session_state.setdefault("user_id", "") 
-        st.session_state.setdefault("selected_wallet", None)
-        st.session_state.setdefault("selected_wallet_id", None)
+        st.session_state.setdefault("selected_wallet", "All Wallets")
+        st.session_state.setdefault("selected_wallet_id", "all")
         
         # Search functionality (temporary state - cleared on new search)
         st.session_state.setdefault("search_history", [])

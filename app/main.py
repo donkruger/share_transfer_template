@@ -317,13 +317,104 @@ def main():
 
     # --- Main Content: User Onboarding & Search Interface ---
     
+    # Getting Started Information Card (Always visible at top)
+    # Use expander as a card container with custom styling
+    st.markdown("""
+    <style>
+    /* Style the container to look like a card */
+    div[data-testid="stExpander"]:has(summary:contains("Getting Started")) {
+        background: linear-gradient(135deg, #fff5f0 0%, #ffffff 100%);
+        border: 2px solid #f4942a;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(244, 148, 42, 0.1);
+        transition: all 0.3s ease;
+        margin: 20px 0;
+    }
+    
+    div[data-testid="stExpander"]:has(summary:contains("Getting Started")):hover {
+        box-shadow: 0 8px 25px rgba(244, 148, 42, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    /* Hide the expander arrow and style the header */
+    div[data-testid="stExpander"] summary:contains("Getting Started") {
+        display: none !important;
+    }
+    
+    /* Style for step badges */
+    .step-number {
+        display: inline-block;
+        background: #f4942a;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        font-weight: bold;
+        margin-right: 10px;
+        box-shadow: 0 2px 8px rgba(244, 148, 42, 0.3);
+    }
+    
+    .step-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    
+    .step-desc {
+        color: #666;
+        margin-left: 38px;
+        margin-bottom: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create an expander that's always expanded and styled as a card
+    with st.expander("Getting Started", expanded=True):
+        
+        # Step 1
+        st.markdown('<span class="step-number">1</span><span class="step-title">Provide Your Information</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc">Enter your name and EasyEquities User ID below to begin the process.</div>', unsafe_allow_html=True)
+        
+        # Step 2
+        st.markdown('<span class="step-number">2</span><span class="step-title">Choose Your Investment Context</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc">Select the wallet/account type for your portfolio transfer.</div>', unsafe_allow_html=True)
+        
+        # Step 3
+        st.markdown('<span class="step-number">3</span><span class="step-title">Find Your Instruments</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc"><b>Option A:</b> Search manually for each instrument<br><b>Option B:</b> Upload your statement via the <b>AI Assistance</b> page for automatic extraction</div>', unsafe_allow_html=True)
+        
+        # Step 4
+        st.markdown('<span class="step-number">4</span><span class="step-title">Verify Instrument Availability</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc">We\'ll check if your instruments are available in our EasyEquities ecosystem.</div>', unsafe_allow_html=True)
+        
+        # Step 5
+        st.markdown('<span class="step-number">5</span><span class="step-title">Configure Portfolio Details</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc">Edit and complete your portfolio transfer information on the <b>Portfolio</b> page.</div>', unsafe_allow_html=True)
+        
+        # Step 6
+        st.markdown('<span class="step-number">6</span><span class="step-title">Submit Your Request</span>', unsafe_allow_html=True)
+        st.markdown('<div class="step-desc">Navigate to the <b>Submit</b> page to finalize your share transfer instruction.</div>', unsafe_allow_html=True)
+        
+        # Warning section
+        st.markdown("---")
+        st.warning("""
+        **⚠️ Important Notes**
+        
+        • **Session Data:** Your information will be lost if you close or refresh this page
+        
+        • **AI Verification:** Always double-check AI-extracted results as AI can occasionally make errors
+        
+        • **Next Steps:** After submission, the EasyEquities team will contact you with approval steps
+        """)
+    
     # Step 1: User Information (prominent in main area)
     user_name = st.session_state.get("user_name", "")
     user_id = st.session_state.get("user_id", "")
     
     if not user_name or not user_id:
         # User Onboarding Section
-        st.markdown("## Welcome! Let's Get Started")
         st.markdown("Please provide your information to begin searching for instruments:")
         
         # Create a nice container for the user info
@@ -343,7 +434,7 @@ def main():
                 user_id = st.text_input(
                     "User ID", 
                     value=st.session_state.get("user_id", ""),
-                    placeholder="Enter your user ID",
+                    placeholder="Enter your EasyEquities user ID",
                     help="Your unique identifier for tracking and support",
                     key="user_id_input"
                 )
@@ -372,34 +463,45 @@ def main():
     if user_name and user_id:
         # Wallet Selection Section
         st.markdown("## Choose Your Investment Context")
-        st.markdown("Select the wallet type that matches your investment goals:")
         
         with st.container():
-            # Get active wallets from config
-            wallet_options = [
+            # Add "All Wallets" as the first option
+            wallet_options = [("all", {"name": "All Wallets", "display_name": "All Wallets", "currency": "Multi", "active": True})]
+            
+            # Then add active wallets from config
+            wallet_options.extend([
                 (wallet_id, info) 
                 for wallet_id, info in wallet_config["wallet_mappings"].items() 
                 if info.get("active", True)
-            ]
+            ])
             
             # Create display labels
             wallet_labels = []
             wallet_ids = []
             
             for wallet_id, info in wallet_options:
-                currency = info.get("currency", "")
-                currency_display = f" ({currency})" if currency else ""
-                label = f"{info['name']} - {info['display_name']}{currency_display}"
+                if wallet_id == "all":
+                    label = "All Wallets - Search across all available wallets"
+                else:
+                    currency = info.get("currency", "")
+                    currency_display = f" ({currency})" if currency else ""
+                    label = f"{info['name']} - {info['display_name']}{currency_display}"
                 wallet_labels.append(label)
                 wallet_ids.append(wallet_id)
             
             if wallet_options:
+                # Default to "All Wallets" (index 0) if not previously selected
+                default_index = 0
+                if 'selected_wallet_id' in st.session_state and st.session_state.selected_wallet_id in wallet_ids:
+                    default_index = wallet_ids.index(st.session_state.selected_wallet_id)
+                
                 selected_index = st.selectbox(
-                    "Select Your Wallet Context",
+                    "Select the wallet to which your portfolio transfer applies:",
                     range(len(wallet_options)),
+                    index=default_index,
                     format_func=lambda x: wallet_labels[x],
                     key="main_wallet_selector",
-                    help="This determines which instruments will be available in your search results"
+                    help="Choose 'All Wallets' to search across all available wallets, or select a specific wallet to filter results"
                 )
                 
                 selected_wallet_id = wallet_ids[selected_index]
@@ -411,14 +513,27 @@ def main():
                 st.session_state.selected_wallet_id = selected_wallet_id
                 
                 # Show wallet info in an expandable section
-                with st.expander(f"About {selected_wallet_info.get('display_name', 'This Wallet')}", expanded=False):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"**Currency:** {selected_wallet_info.get('currency', 'N/A')}")
-                        st.write(f"**Wallet Type:** {selected_wallet_info.get('name', 'N/A')}")
-                    with col2:
-                        st.write(f"**Status:** Active")
-                        st.write(f"**ID:** {selected_wallet_id}")
+                if selected_wallet_id == "all":
+                    with st.expander("About All Wallets Search", expanded=False):
+                        st.info("""
+                        **All Wallets** searches across the entire instrument database without wallet restrictions.
+                        
+                        This is ideal when:
+                        - You're not sure which wallet contains your instruments
+                        - You want to see all available options
+                        - You're importing from a PDF statement with mixed instruments
+                        
+                        Results will show which wallets each instrument is available in.
+                        """)
+                else:
+                    with st.expander(f"About {selected_wallet_info.get('display_name', 'This Wallet')}", expanded=False):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write(f"**Currency:** {selected_wallet_info.get('currency', 'N/A')}")
+                            st.write(f"**Wallet Type:** {selected_wallet_info.get('name', 'N/A')}")
+                        with col2:
+                            st.write(f"**Status:** Active")
+                            st.write(f"**ID:** {selected_wallet_id}")
         
         st.markdown("---")
 

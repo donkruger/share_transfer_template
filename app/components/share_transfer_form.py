@@ -193,7 +193,7 @@ class ShareTransferForm:
                 value=existing_entry.get('notes', ''),
                 key=f"notes_{form_key}",
                 help="Additional information or comments",
-                height=60
+                height=70  # Minimum height is 68px in newer Streamlit versions
             )
             
             # Form submission - following current button styling conventions
@@ -240,7 +240,8 @@ class ShareTransferForm:
                         'last_price': last_price,
                         'broker_from': broker_from,
                         'broker_to': broker_to,
-                        'notes': notes.strip()
+                        'notes': notes.strip(),
+                        'data_source': 'manual_entry'  # Track that this was manually entered
                     }
                     
                     try:

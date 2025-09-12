@@ -108,9 +108,14 @@ class InstrumentFuzzyMatcher:
         active_df = self.instruments_df[self.instruments_df['ActiveData'] != 0].copy()
         logger.info(f"Active instruments (ActiveData != 0): {len(active_df)}")
         
+        # Check if searching across all wallets
+        if wallet_id == "all" or wallet_id == "":
+            logger.info(f"Searching across ALL wallets - no wallet filtering applied")
+            return active_df
+        
         # Filter by wallet availability in accountFiltersArray
         if wallet_id and wallet_id.isdigit():
-            logger.info(f"Filtering by wallet ID: {wallet_id}")
+            logger.info(f"Filtering by specific wallet ID: {wallet_id}")
             
             # Debug: Show some sample accountFiltersArray values
             sample_filters = active_df['accountFiltersArray'].fillna('').astype(str).head(10).tolist()
@@ -133,43 +138,75 @@ class InstrumentFuzzyMatcher:
             return active_df
     
     def _find_exact_matches(self, df: pd.DataFrame, query: str) -> List[Dict]:
-        """Find exact matches in name or ticker fields."""
+        """Find exact and high-confidence matches with enhanced priority ranking."""
         results = []
         query_upper = query.upper()
+        query_lower = query.lower()
         
-        # Exact name matches
+        # Priority 1: Exact name matches (highest priority)
         exact_name = df[df['Name'].str.upper() == query_upper]
         for _, row in exact_name.iterrows():
-            results.append(self._create_result_dict(row, 100, "exact_name"))
+            results.append(self._create_result_dict(row, 100, "exact_name", priority=1))
         
-        # Exact ticker matches  
+        # Priority 1.5: Exact ticker matches (very high priority)
         exact_ticker = df[df['Ticker'].str.upper() == query_upper]
         for _, row in exact_ticker.iterrows():
-            results.append(self._create_result_dict(row, 95, "exact_ticker"))
+            results.append(self._create_result_dict(row, 99, "exact_ticker", priority=1))
+        
+        # Priority 2: Name starts with query (high confidence partial match)
+        if len(query) >= 3:  # Only for meaningful queries
+            starts_with_name = df[df['Name'].str.lower().str.startswith(query_lower)]
+            # Exclude already found exact matches
+            starts_with_name = starts_with_name[~starts_with_name['Name'].str.upper().isin([query_upper])]
+            for _, row in starts_with_name.iterrows():
+                # Score based on how much of the name matches
+                name_len = len(row['Name'])
+                query_len = len(query)
+                score = min(95, 85 + (query_len / name_len * 10))
+                results.append(self._create_result_dict(row, int(score), "starts_with_name", priority=2))
         
         return results
     
     def _find_fuzzy_name_matches(self, df: pd.DataFrame, query: str) -> List[Dict]:
-        """Find fuzzy matches in instrument names."""
+        """Find fuzzy matches in instrument names with enhanced scoring."""
         results = []
         names = df['Name'].dropna().tolist()
         
         if not names:
             return results
         
-        # Use fuzzywuzzy for intelligent matching
-        matches = process.extract(query, names, scorer=fuzz.token_sort_ratio, limit=None)
+        # Use multiple fuzzy matching algorithms for better accuracy
+        # Token sort ratio is good for reordered words
+        token_sort_matches = process.extract(query, names, scorer=fuzz.token_sort_ratio, limit=None)
+        # WRatio is good for partial matches
+        wratio_matches = process.extract(query, names, scorer=fuzz.WRatio, limit=None)
         
-        for name, score in matches:
+        # Combine scores from different algorithms
+        combined_scores = {}
+        for name, score in token_sort_matches:
+            if score >= self.threshold - 10:  # Slightly lower threshold for initial filtering
+                combined_scores[name] = score
+        
+        for name, score in wratio_matches:
+            if score >= self.threshold - 10:
+                if name in combined_scores:
+                    # Take the maximum of the two scores
+                    combined_scores[name] = max(combined_scores[name], score)
+                else:
+                    combined_scores[name] = score
+        
+        # Filter and add results
+        for name, score in combined_scores.items():
             if score >= self.threshold:
                 matching_rows = df[df['Name'] == name]
                 for _, row in matching_rows.iterrows():
-                    results.append(self._create_result_dict(row, score, "fuzzy_name"))
+                    # Priority 3: Fuzzy name matches (high priority, after exact matches)
+                    results.append(self._create_result_dict(row, score, "fuzzy_name", priority=3))
         
         return results
     
     def _find_ticker_matches(self, df: pd.DataFrame, query: str) -> List[Dict]:
-        """Find ticker matches with fuzzy search."""
+        """Find ticker matches with enhanced priority ranking and variation handling."""
         results = []
         tickers = df['Ticker'].dropna().tolist()
         tickers = [t for t in tickers if t != '']
@@ -177,18 +214,32 @@ class InstrumentFuzzyMatcher:
         if not tickers:
             return results
         
+        query_upper = query.upper()
+        
+        # First check for exact ticker matches (case-insensitive) that weren't caught earlier
+        for ticker in tickers:
+            if ticker.upper() == query_upper:
+                matching_rows = df[df['Ticker'] == ticker]
+                for _, row in matching_rows.iterrows():
+                    # High score for exact ticker match
+                    results.append(self._create_result_dict(row, 95, "ticker_exact", priority=2))
+        
+        # Then do fuzzy matching for partial matches
         matches = process.extract(query, tickers, scorer=fuzz.ratio, limit=None)
         
         for ticker, score in matches:
-            if score >= max(60, self.threshold - 20):  # Lower threshold for tickers
-                matching_rows = df[df['Ticker'] == ticker]
-                for _, row in matching_rows.iterrows():
-                    results.append(self._create_result_dict(row, score, "ticker"))
+            # Skip if we already added this as exact match
+            if ticker.upper() != query_upper:
+                if score >= max(60, self.threshold - 20):  # Lower threshold for tickers
+                    matching_rows = df[df['Ticker'] == ticker]
+                    for _, row in matching_rows.iterrows():
+                        # Priority 4: Fuzzy ticker matches (after name matches)
+                        results.append(self._create_result_dict(row, score, "fuzzy_ticker", priority=4))
         
         return results
     
     def _find_isin_matches(self, df: pd.DataFrame, query: str) -> List[Dict]:
-        """Find ISIN code matches."""
+        """Find ISIN code matches with lowest priority (secondary ranking)."""
         results = []
         
         if 'ISINCode' not in df.columns:
@@ -200,13 +251,28 @@ class InstrumentFuzzyMatcher:
         if not isins:
             return results
         
+        query_upper = query.upper()
+        
+        # First check for exact ISIN matches
+        for isin in isins:
+            if isin.upper() == query_upper:
+                matching_rows = df[df['ISINCode'] == isin]
+                for _, row in matching_rows.iterrows():
+                    # Exact ISIN match gets high score but still lower priority than name/ticker
+                    results.append(self._create_result_dict(row, 90, "isin_exact", priority=5))
+        
+        # Then do fuzzy matching for partial ISIN matches
+        # ISINs are standardized codes, so only look for high-confidence matches
         matches = process.extract(query, isins, scorer=fuzz.ratio, limit=None)
         
         for isin, score in matches:
-            if score >= max(80, self.threshold):  # High threshold for ISINs
-                matching_rows = df[df['ISINCode'] == isin]
-                for _, row in matching_rows.iterrows():
-                    results.append(self._create_result_dict(row, score, "isin"))
+            # Skip if already added as exact match
+            if isin.upper() != query_upper:
+                if score >= max(85, self.threshold):  # High threshold for ISINs (they should match closely)
+                    matching_rows = df[df['ISINCode'] == isin]
+                    for _, row in matching_rows.iterrows():
+                        # Priority 5: ISIN matches (lowest priority - secondary ranking)
+                        results.append(self._create_result_dict(row, score, "isin_fuzzy", priority=5))
         
         return results
     
@@ -257,8 +323,8 @@ class InstrumentFuzzyMatcher:
         # Default to ZAR if no currency can be determined
         return 'ZAR'
     
-    def _create_result_dict(self, row: pd.Series, score: int, match_type: str) -> Dict:
-        """Create standardized result dictionary with all required fields from CSV."""
+    def _create_result_dict(self, row: pd.Series, score: int, match_type: str, priority: int = 10) -> Dict:
+        """Create standardized result dictionary with priority-based ranking."""
         # Determine currency based on exchange or wallet filters
         currency = self._determine_currency(row)
         
@@ -282,9 +348,10 @@ class InstrumentFuzzyMatcher:
             # Description
             'description': row.get('*Description', ''),
             
-            # Search metadata
+            # Search metadata with priority
             'relevance_score': score,
             'match_type': match_type,
+            'priority': priority,  # Lower number = higher priority
             
             # Wallet eligibility
             'account_filters': row.get('accountFiltersArray', ''),
@@ -294,9 +361,8 @@ class InstrumentFuzzyMatcher:
         }
     
     def _deduplicate_and_rank(self, results: List[Dict]) -> List[Dict]:
-        """Remove duplicates and sort by relevance."""
-        seen_instruments = set()
-        unique_results = []
+        """Remove duplicates and sort by enhanced priority system."""
+        seen_instruments = {}
         
         for result in results:
             # Prefer business key (Exchange, Ticker, ContractCode); fallback to instrument_id+name
@@ -309,23 +375,29 @@ class InstrumentFuzzyMatcher:
                 instrument_key = ('BUSINESS_KEY',) + business_key
             else:
                 instrument_key = ('LEGACY_KEY', result.get('instrument_id', ''), (result.get('name') or '').upper())
+            
+            # Keep only the best match for each instrument
             if instrument_key not in seen_instruments:
-                seen_instruments.add(instrument_key)
-                unique_results.append(result)
+                seen_instruments[instrument_key] = result
+            else:
+                existing = seen_instruments[instrument_key]
+                # Use priority if available, otherwise use match_type_priority
+                result_priority = result.get('priority', 99)
+                existing_priority = existing.get('priority', 99)
+                
+                if (result_priority < existing_priority or 
+                    (result_priority == existing_priority and 
+                     result['relevance_score'] > existing['relevance_score'])):
+                    seen_instruments[instrument_key] = result
         
-        # Sort by relevance score (descending) and match type priority
-        match_type_priority = {
-            'exact_name': 0,
-            'exact_ticker': 1,
-            'fuzzy_name': 2,
-            'ticker': 3,
-            'isin': 4
-        }
+        unique_results = list(seen_instruments.values())
         
+        # Enhanced sorting: priority first, then relevance score
+        # Priority: 1=exact_name, 2=exact_ticker, 3=fuzzy_name, 4=fuzzy_ticker, 5=isin
         unique_results.sort(
             key=lambda x: (
-                match_type_priority.get(x['match_type'], 99),
-                -x['relevance_score']
+                x.get('priority', 99),  # Use explicit priority if set
+                -x['relevance_score']    # Then by relevance score (higher is better)
             )
         )
         

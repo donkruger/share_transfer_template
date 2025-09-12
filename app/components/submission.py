@@ -169,6 +169,15 @@ def handle_portfolio_submission(
                 "submission_timestamp": datetime.datetime.now().isoformat()
             }
             
+            # Add PDF extraction metadata if available
+            if 'pdf_extraction' in st.session_state:
+                submission_data["pdf_extraction"] = {
+                    "document_metadata": st.session_state['pdf_extraction'].get("document_metadata"),
+                    "confidence_scores": st.session_state['pdf_extraction'].get("confidence_scores"),
+                    "extraction_timestamp": st.session_state['pdf_extraction'].get("processing_timestamp"),
+                    "extraction_notes": st.session_state['pdf_extraction'].get("extraction_notes", [])
+                }
+            
             # Generate share transfer CSV data
             share_transfer_data = PortfolioService.generate_share_transfer_data()
             
@@ -293,6 +302,17 @@ Portfolio Summary:
 • Total Instruments: {len(submission_data.get('selected_instruments', []))}
 • Portfolio Entries: {len(share_transfer_data)}
 • Additional Notes: {submission_data.get('submission_notes', 'None provided')}
+
+"""
+        
+        # Add PDF extraction information if available
+        pdf_extraction = submission_data.get('pdf_extraction')
+        if pdf_extraction:
+            body += f"""PDF Extraction Details:
+• Document Type: {pdf_extraction.get('document_metadata', {}).get('document_type', 'Unknown')}
+• Broker: {pdf_extraction.get('document_metadata', {}).get('broker_name', 'Unknown')}
+• Confidence Score: {pdf_extraction.get('confidence_scores', {}).get('overall', 0):.0%}
+• Extraction Time: {pdf_extraction.get('extraction_timestamp', 'Unknown')}
 
 """
         

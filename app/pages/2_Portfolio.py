@@ -71,6 +71,35 @@ if not selected_instruments:
             st.switch_page("pages/1_AI_Assistance.py")
     st.stop()
 
+# Check if we have PDF extraction data
+if 'pdf_extraction' in st.session_state:
+    st.info("""
+    📄 **PDF Data Imported!** 
+    Review the pre-populated values below and make any necessary corrections.
+    Fields marked with 🟢 have high confidence, 🟡 medium, 🔴 low.
+    """)
+    
+    # Show extraction summary
+    extraction = st.session_state['pdf_extraction']
+    if extraction.get('document_metadata'):
+        with st.expander("📊 Document Summary", expanded=False):
+            metadata = extraction['document_metadata']
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Document Type", metadata.get('document_type', 'Unknown'))
+            with col2:
+                st.metric("Broker", metadata.get('broker_name', 'Unknown'))
+            with col3:
+                confidence = extraction.get('confidence_scores', {}).get('overall', 0)
+                st.metric("Confidence", f"{confidence:.0%}")
+            
+            # Show extraction notes if any
+            notes = extraction.get('extraction_notes', [])
+            if notes:
+                st.warning("**Extraction Notes:**")
+                for note in notes:
+                    st.caption(f"• {note}")
+
 # Portfolio overview
 st.markdown("### Portfolio Overview")
 col1, col2, col3 = st.columns(3)
@@ -106,10 +135,72 @@ share_transfer_form = ShareTransferForm()
 for i, instrument in enumerate(selected_instruments):
     instrument_id = str(instrument.get('instrument_id'))
     
+    # Check if this entry has PDF extraction data
+    portfolio_entry = PortfolioService.get_portfolio_entry(instrument_id)
+    has_pdf_data = portfolio_entry and portfolio_entry.get('data_source') == 'pdf_extraction'
+    
+    # Determine expansion state - expand if has PDF data or no data yet
+    should_expand = has_pdf_data or portfolio_entry is None or i < 2
+    
     with st.expander(
         f"{instrument.get('name', 'Unknown Instrument')} ({instrument.get('ticker', 'N/A')})",
-        expanded=(i < 3 or PortfolioService.get_portfolio_entry(instrument_id) is None)
+        expanded=should_expand
     ):
+        # Add remove button and confidence indicator
+        col_remove, col_confidence = st.columns([1, 4])
+        
+        with col_remove:
+            if st.button("Remove", key=f"remove_{instrument_id}", type="secondary", help="Remove this instrument from portfolio"):
+                # Remove from selection manager
+                from app.services.selection_manager import SelectionManager
+                if SelectionManager.remove_instrument(instrument):
+                    # Also remove portfolio entry if it exists
+                    if f"portfolio_entries" in st.session_state and instrument_id in st.session_state.portfolio_entries:
+                        del st.session_state.portfolio_entries[instrument_id]
+                    st.success(f"Removed {instrument.get('name')} from portfolio")
+                    st.rerun()
+                else:
+                    st.error("Failed to remove instrument")
+        
+        with col_confidence:
+            # Show data source and confidence indicators
+            if portfolio_entry:
+                data_source = portfolio_entry.get('data_source', '')
+                
+                # Check if data has been merged from PDF after manual entry
+                if data_source == 'manual_then_pdf' or portfolio_entry.get('pdf_merged'):
+                    st.markdown("""
+                    <div style="display: flex; align-items: center; padding: 0.5rem 1rem; background-color: #cce5ff; border: 1px solid #b8daff; border-radius: 0.375rem; color: #004085; margin-bottom: 1rem;">
+                        <span style="color: #007bff; margin-right: 0.5rem; font-size: 1.1em;">🔄</span>
+                        <span><strong>Manual entry enhanced with PDF data</strong> - Your manual entries have been preserved</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                # Show confidence indicator if from PDF with better positioning
+                elif has_pdf_data:
+                    confidence = portfolio_entry.get('extraction_confidence', 0)
+                    if confidence > 0.8:
+                        st.markdown("""
+                        <div style="display: flex; align-items: center; padding: 0.5rem 1rem; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 0.375rem; color: #155724; margin-bottom: 1rem;">
+                            <span style="color: #28a745; margin-right: 0.5rem; font-size: 1.1em;">🟢</span>
+                            <span><strong>High confidence extraction ({:.0%})</strong></span>
+                        </div>
+                        """.format(confidence), unsafe_allow_html=True)
+                    elif confidence > 0.6:
+                        st.markdown("""
+                        <div style="display: flex; align-items: center; padding: 0.5rem 1rem; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.375rem; color: #856404; margin-bottom: 1rem;">
+                            <span style="color: #ffc107; margin-right: 0.5rem; font-size: 1.1em;">🟡</span>
+                            <span><strong>Medium confidence - please verify ({:.0%})</strong></span>
+                        </div>
+                        """.format(confidence), unsafe_allow_html=True)
+                    else:
+                        st.markdown("""
+                        <div style="display: flex; align-items: center; padding: 0.5rem 1rem; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 0.375rem; color: #721c24; margin-bottom: 1rem;">
+                            <span style="color: #dc3545; margin-right: 0.5rem; font-size: 1.1em;">🔴</span>
+                            <span><strong>Low confidence - manual review required ({:.0%})</strong></span>
+                        </div>
+                        """.format(confidence), unsafe_allow_html=True)
+        
         # Display comprehensive instrument details
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -164,7 +255,7 @@ for i, instrument in enumerate(selected_instruments):
 st.markdown("---")
 st.markdown("### Portfolio Actions")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     if st.button("Search More", use_container_width=True):
@@ -175,6 +266,23 @@ with col2:
         st.switch_page("pages/1_AI_Assistance.py")
 
 with col3:
+    if st.button("Remove All Instruments", 
+                type="secondary", 
+                use_container_width=True):
+        if st.session_state.get('confirm_remove_all', False):
+            # Remove all instruments from selection
+            from app.services.selection_manager import SelectionManager
+            SelectionManager.clear_selections(confirm=True)
+            # Also clear portfolio data
+            PortfolioService.clear_portfolio_data()
+            st.session_state.confirm_remove_all = False
+            st.success("All instruments removed from portfolio!")
+            st.rerun()
+        else:
+            st.session_state.confirm_remove_all = True
+            st.warning("Click again to confirm removing all instruments")
+
+with col4:
     is_complete = PortfolioService.is_portfolio_complete()
     if st.button(
         "Proceed to Submit", 
@@ -188,7 +296,7 @@ with col3:
         else:
             st.error("Please complete all portfolio entries before submitting")
 
-with col4:
+with col5:
     if st.button("Clear Portfolio Data", 
                 type="secondary", 
                 use_container_width=True):

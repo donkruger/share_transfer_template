@@ -85,9 +85,10 @@ class ResultDisplayComponent:
                             selection_changed = True
                             st.rerun()
                     else:
-                        # Show selection checkbox
-                        selected = st.checkbox("", key=f"select_{idx}", 
-                                             help="Add to your instrument portfolio")
+                        # Show selection checkbox with hidden label for accessibility
+                        selected = st.checkbox("Select", key=f"select_{idx}", 
+                                             help="Add to your instrument portfolio",
+                                             label_visibility="collapsed")
                         if selected:
                             success = SelectionManager.add_instrument(
                                 result, 
