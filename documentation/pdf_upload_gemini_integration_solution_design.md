@@ -1278,6 +1278,1003 @@ Based on [Google's pricing](https://ai.google.dev/gemini-api/docs/document-proce
 3.  **Batch Processing**: Optimize API calls
 4.  **Model Selection**: Use appropriate model tier
 
+## Password-Protected PDF Handling
+
+### Problem Statement
+
+Many financial institutions secure their portfolio statements and investment documents with passwords for privacy and security reasons. Users attempting to upload password-protected PDFs encounter processing failures, requiring a seamless solution to detect, request credentials, and unlock these documents within the existing chat-based workflow.
+
+### Solution Architecture
+
+#### Technical Stack Enhancement
+```python
+# Additional dependency required
+pip install PyMuPDF  # Superior PDF handling with encryption support
+```
+
+#### Detection & Processing Flow
+
+```mermaid
+graph TD
+    A[User uploads PDF] --> B[Check if encrypted]
+    B -->|Not encrypted| C[Continue normal processing]
+    B -->|Encrypted| D[Show password prompt in chat]
+    D --> E[User enters password]
+    E --> F[Attempt decryption]
+    F -->|Success| G[Continue normal processing]
+    F -->|Failure| H[Show error & retry prompt]
+    H --> E
+    G --> I[Extract portfolio data]
+    C --> I
+```
+
+### Implementation Design
+
+#### 1. Enhanced PDF Processor with Encryption Detection
+
+```python
+# app/services/gemini_pdf_processor.py (Enhanced)
+import fitz  # PyMuPDF
+import streamlit as st
+from typing import Dict, Any, Optional, Tuple
+
+class GeminiPDFProcessor:
+    """Enhanced with password-protected PDF handling."""
+    
+    def __init__(self, api_key: str):
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.extraction_prompt = self._create_extraction_prompt()
+    
+    def check_pdf_encryption(self, pdf_bytes: bytes) -> Tuple[bool, Optional[str]]:
+        """
+        Check if PDF is password-protected and detect encryption type.
+        
+        Returns:
+            Tuple of (is_encrypted: bool, encryption_info: str)
+        """
+        try:
+            # Create temporary PDF document from bytes
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            
+            if doc.is_encrypted:
+                # Determine encryption level
+                encryption_info = "Standard password protection detected"
+                if doc.metadata.get('encryption') == 'Standard Security Handler':
+                    encryption_info = "Document uses standard PDF encryption"
+                elif doc.metadata.get('encryption'):
+                    encryption_info = f"Document uses {doc.metadata.get('encryption')}"
+                
+                doc.close()
+                return True, encryption_info
+            else:
+                doc.close()
+                return False, None
+                
+        except Exception as e:
+            # If we can't open the PDF at all, assume it might be encrypted
+            return True, f"Unable to analyze PDF structure: {str(e)}"
+    
+    def unlock_pdf(self, pdf_bytes: bytes, password: str) -> Tuple[bool, Optional[bytes], Optional[str]]:
+        """
+        Attempt to unlock password-protected PDF.
+        
+        Args:
+            pdf_bytes: Original PDF file bytes
+            password: User-provided password
+            
+        Returns:
+            Tuple of (success: bool, unlocked_bytes: bytes, error_message: str)
+        """
+        try:
+            # Open PDF with password
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            
+            if doc.is_encrypted:
+                # Attempt authentication
+                success = doc.authenticate(password)
+                
+                if success:
+                    # Create unlocked PDF bytes
+                    unlocked_bytes = doc.tobytes()
+                    doc.close()
+                    return True, unlocked_bytes, None
+                else:
+                    doc.close()
+                    return False, None, "Incorrect password. Please verify your password and try again."
+            else:
+                # PDF wasn't encrypted after all
+                doc.close()
+                return True, pdf_bytes, None
+                
+        except Exception as e:
+            return False, None, f"Error unlocking PDF: {str(e)}"
+    
+    def process_pdf_with_password_handling(self, pdf_bytes: bytes, password: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Enhanced PDF processing with automatic password handling.
+        
+        Args:
+            pdf_bytes: PDF file content
+            password: Optional password if known
+            
+        Returns:
+            Processing result with encryption status
+        """
+        # Check if PDF is encrypted
+        is_encrypted, encryption_info = self.check_pdf_encryption(pdf_bytes)
+        
+        if is_encrypted and not password:
+            # Need password from user
+            return {
+                "success": False,
+                "requires_password": True,
+                "encryption_info": encryption_info,
+                "error": "PDF is password-protected. Please provide the password to continue."
+            }
+        
+        # Handle password-protected PDF
+        if is_encrypted and password:
+            success, unlocked_bytes, error_message = self.unlock_pdf(pdf_bytes, password)
+            
+            if not success:
+                return {
+                    "success": False,
+                    "requires_password": True,
+                    "encryption_info": encryption_info,
+                    "error": error_message
+                }
+            
+            # Use unlocked bytes for processing
+            pdf_bytes = unlocked_bytes
+        
+        # Continue with normal processing
+        try:
+            return self.process_pdf(pdf_bytes)
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Error processing unlocked PDF: {str(e)}"
+            }
+```
+
+#### 2. Enhanced AI Assistance Page with Password Prompt
+
+```python
+# app/pages/1_AI_Assistance.py (Enhanced Password Handling)
+
+def render_pdf_upload_interface():
+    """Enhanced PDF upload with password protection handling."""
+    
+    st.markdown("### 📄 Upload Portfolio Statement")
+    
+    with st.container():
+        uploaded_file = st.file_uploader(
+            "Upload your broker statement or portfolio document (PDF)",
+            type=['pdf'],
+            key="ai_pdf_upload",
+            help="Upload your PDF - we'll handle password-protected documents automatically",
+            accept_multiple_files=False
+        )
+        
+        if uploaded_file:
+            # Show file info
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.success(f"📎 **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
+            with col2:
+                if st.button("🔍 Analyze Document", type="primary", use_container_width=True):
+                    process_uploaded_pdf_with_password_handling(uploaded_file)
+
+def process_uploaded_pdf_with_password_handling(uploaded_file):
+    """Enhanced PDF processing with password handling in chat interface."""
+    
+    with st.spinner("🔍 Analyzing your document..."):
+        # Initialize processor
+        processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
+        pdf_bytes = uploaded_file.read()
+        
+        # Add upload message to chat
+        st.session_state.messages.append({
+            "role": "user",
+            "content": f"📎 Uploaded document: {uploaded_file.name}"
+        })
+        
+        # Check if password is needed
+        password = st.session_state.get(f'pdf_password_{uploaded_file.name}', None)
+        
+        # Attempt processing
+        result = processor.process_pdf_with_password_handling(pdf_bytes, password)
+        
+        if result.get('requires_password', False):
+            handle_password_protected_pdf(uploaded_file, result)
+        elif result.get('success', False):
+            handle_successful_pdf_processing(uploaded_file, result)
+        else:
+            handle_pdf_processing_error(uploaded_file, result)
+
+def handle_password_protected_pdf(uploaded_file, result):
+    """Handle password-protected PDF with in-chat UI."""
+    
+    # Add AI message about password requirement
+    encryption_info = result.get('encryption_info', 'Password protection detected')
+    
+    ai_message = f"""
+    🔒 **Password-Protected Document Detected**
+    
+    Your document "{uploaded_file.name}" is password-protected.
+    
+    **Detected:** {encryption_info}
+    
+    Please enter the document password below to unlock and analyze your portfolio statement.
+    
+    ⚠️ **Security Note:** Your password is used only for this session and is not stored.
+    """
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_message
+    })
+    
+    # Re-render chat to show the message
+    st.rerun()
+
+def render_password_input_interface(uploaded_file):
+    """Render password input interface within chat context."""
+    
+    if f'show_password_input_{uploaded_file.name}' not in st.session_state:
+        st.session_state[f'show_password_input_{uploaded_file.name}'] = True
+    
+    if st.session_state.get(f'show_password_input_{uploaded_file.name}', False):
+        
+        st.markdown("### 🔐 Enter PDF Password")
+        
+        with st.container():
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                password = st.text_input(
+                    f"Password for {uploaded_file.name}:",
+                    type="password",
+                    key=f"password_input_{uploaded_file.name}",
+                    help="Enter the password to unlock your PDF document"
+                )
+            
+            with col2:
+                if st.button("🔓 Unlock PDF", type="primary", use_container_width=True):
+                    if password:
+                        # Store password and retry processing
+                        st.session_state[f'pdf_password_{uploaded_file.name}'] = password
+                        st.session_state[f'show_password_input_{uploaded_file.name}'] = False
+                        
+                        # Add user message to chat
+                        st.session_state.messages.append({
+                            "role": "user", 
+                            "content": "🔓 Provided password - attempting to unlock document"
+                        })
+                        
+                        # Retry processing
+                        retry_pdf_processing_with_password(uploaded_file)
+                    else:
+                        st.error("Please enter a password")
+
+def retry_pdf_processing_with_password(uploaded_file):
+    """Retry PDF processing with provided password."""
+    
+    with st.spinner("🔓 Unlocking and analyzing document..."):
+        processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
+        pdf_bytes = uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else uploaded_file.read()
+        password = st.session_state.get(f'pdf_password_{uploaded_file.name}')
+        
+        # Attempt processing with password
+        result = processor.process_pdf_with_password_handling(pdf_bytes, password)
+        
+        if result.get('success', False):
+            # Success - add confirmation message
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": "✅ **Document Successfully Unlocked!** \n\nI've successfully unlocked your password-protected document and extracted the portfolio information."
+            })
+            
+            handle_successful_pdf_processing(uploaded_file, result)
+        
+        elif result.get('requires_password', False):
+            # Wrong password - show retry
+            error_message = result.get('error', 'Incorrect password')
+            
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": f"❌ **Unlock Failed:** {error_message}\n\nPlease verify your password and try again."
+            })
+            
+            # Reset password and show input again
+            if f'pdf_password_{uploaded_file.name}' in st.session_state:
+                del st.session_state[f'pdf_password_{uploaded_file.name}']
+            st.session_state[f'show_password_input_{uploaded_file.name}'] = True
+            
+            st.rerun()
+        
+        else:
+            # Other error
+            handle_pdf_processing_error(uploaded_file, result)
+
+def handle_successful_pdf_processing(uploaded_file, result):
+    """Handle successful PDF processing (existing functionality enhanced)."""
+    
+    # Store processing results
+    st.session_state['pdf_processing_result'] = result
+    st.session_state['pending_pdf'] = {
+        'file_name': uploaded_file.name,
+        'pdf_bytes': uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else uploaded_file.read(),
+        'processor': GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"]),
+        'was_password_protected': result.get('was_password_protected', False)
+    }
+    
+    # Enhanced success message
+    success_message = f"""
+    ✅ **Document Analysis Complete!**
+    
+    I've successfully analyzed your document "{uploaded_file.name}".
+    
+    **Document Summary:**
+    - **Type:** {result.get('document_metadata', {}).get('document_type', 'Portfolio Statement')}
+    - **Broker:** {result.get('document_metadata', {}).get('broker_name', 'Detected automatically')}
+    - **Security:** {'🔒 Password-protected (unlocked)' if result.get('was_password_protected') else '🔓 Standard document'}
+    
+    **Portfolio Holdings Found:** {len(result.get('portfolio_entries', []))} instruments detected
+    
+    I can help extract this information and pre-populate your portfolio configuration.
+    """
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": success_message
+    })
+    
+    # Show extraction options (existing functionality)
+    show_extraction_options()
+
+def handle_pdf_processing_error(uploaded_file, result):
+    """Handle PDF processing errors."""
+    
+    error_message = result.get('error', 'Unknown error occurred')
+    
+    ai_error_response = f"""
+    ❌ **Document Processing Error**
+    
+    I encountered an issue processing "{uploaded_file.name}":
+    
+    **Error:** {error_message}
+    
+    **What you can try:**
+    1. Verify the file is a valid PDF document
+    2. If password-protected, ensure you have the correct password
+    3. Try re-uploading the document
+    4. Proceed with manual portfolio configuration if needed
+    
+    I'm here to help with any questions!
+    """
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_error_response
+    })
+```
+
+#### 3. Enhanced Chat Rendering with Password Interface
+
+```python
+# app/pages/1_AI_Assistance.py (Chat Rendering Enhancement)
+
+def render_ai_assistance_page():
+    """Enhanced main rendering with password handling."""
+    
+    # Render PDF upload interface
+    render_pdf_upload_interface()
+    
+    # Check if we need to show password input
+    for key in st.session_state.keys():
+        if key.startswith('show_password_input_') and st.session_state[key]:
+            uploaded_file_name = key.replace('show_password_input_', '')
+            # Create a mock uploaded file object for the interface
+            if f'uploaded_file_{uploaded_file_name}' in st.session_state:
+                render_password_input_interface(st.session_state[f'uploaded_file_{uploaded_file_name}'])
+    
+    st.markdown("---")
+    
+    # Render chat history
+    for message in st.session_state.messages:
+        if message["role"] == "assistant":
+            with st.chat_message("assistant", avatar=get_favicon_path()):
+                st.markdown(message["content"])
+        else:
+            with st.chat_message("user", avatar=get_user_avatar_path()):
+                st.markdown(message["content"])
+    
+    # Handle regular chat input
+    handle_chat_input()
+    
+    # Show quick actions if no messages
+    if not st.session_state.messages:
+        render_quick_actions()
+```
+
+### Security & Privacy Considerations
+
+#### 1. Password Security
+```python
+# Security best practices implementation
+
+def secure_password_handling():
+    """Implement secure password handling practices."""
+    
+    # Store passwords only in session state (memory)
+    # Never log or persist passwords to disk
+    # Clear passwords when session ends or processing completes
+    
+    def cleanup_sensitive_data():
+        """Clean up passwords and sensitive data from session."""
+        keys_to_remove = [key for key in st.session_state.keys() 
+                         if key.startswith('pdf_password_')]
+        for key in keys_to_remove:
+            del st.session_state[key]
+    
+    # Register cleanup on session end
+    import atexit
+    atexit.register(cleanup_sensitive_data)
+```
+
+#### 2. Error Handling & User Feedback
+```python
+def enhanced_error_handling():
+    """Comprehensive error handling for password scenarios."""
+    
+    error_scenarios = {
+        'incorrect_password': {
+            'message': "The password you entered is incorrect. Please verify and try again.",
+            'retry': True,
+            'fallback': "manual_entry"
+        },
+        'unsupported_encryption': {
+            'message': "This document uses an unsupported encryption method.",
+            'retry': False,
+            'fallback': "contact_support"
+        },
+        'corrupted_pdf': {
+            'message': "The PDF file appears to be corrupted or damaged.",
+            'retry': False,
+            'fallback': "re_upload"
+        }
+    }
+    
+    return error_scenarios
+```
+
+### Integration with Existing Workflow
+
+#### Session State Enhancement
+```python
+# Enhanced session state management for password handling
+def initialize_password_handling_state():
+    """Initialize session state for password-protected PDF handling."""
+    
+    # Password handling state
+    st.session_state.setdefault('pdf_passwords', {})  # filename -> password mapping
+    st.session_state.setdefault('password_attempts', {})  # filename -> attempt count
+    st.session_state.setdefault('unlock_status', {})  # filename -> status mapping
+    
+    # Security settings
+    st.session_state.setdefault('max_password_attempts', 3)
+    st.session_state.setdefault('password_timeout', 300)  # 5 minutes
+```
+
+#### Email Submission Enhancement
+```python
+# Enhanced email submission to include encryption metadata
+def enhanced_submission_with_encryption_metadata():
+    """Include password-protection metadata in submissions."""
+    
+    submission_metadata = {
+        "document_security": {
+            "was_password_protected": st.session_state.get('was_password_protected', False),
+            "encryption_method": st.session_state.get('encryption_info', 'None'),
+            "unlock_timestamp": st.session_state.get('unlock_timestamp'),
+            "security_note": "Document was securely processed and passwords were not stored"
+        }
+    }
+    
+    return submission_metadata
+```
+
+### User Experience Enhancements
+
+#### 1. Progress Indicators
+- **Detection Phase**: "🔍 Analyzing document security..."
+- **Password Entry**: "🔐 Enter password to unlock document"  
+- **Unlocking Phase**: "🔓 Unlocking document..."
+- **Success**: "✅ Document unlocked and analyzed successfully"
+
+#### 2. Help & Guidance
+```python
+def render_password_help_section():
+    """Provide user guidance for password-protected PDFs."""
+    
+    with st.expander("❓ Help with Password-Protected PDFs", expanded=False):
+        st.markdown("""
+        **Common Password Sources:**
+        - Your account number
+        - Last 4 digits of your SSN/ID number
+        - Date of birth (DDMMYYYY format)
+        - Broker-provided default passwords
+        
+        **Security Notes:**
+        - Passwords are used only for this session
+        - No passwords are stored or logged
+        - Your document remains secure throughout processing
+        
+        **Troubleshooting:**
+        - Verify password spelling and capitalization
+        - Check for special characters or spaces
+        - Contact your broker if password is unknown
+        """)
+```
+
+## Zero-Match Portfolio Analysis Handling
+
+### Problem Statement
+
+When users upload portfolio statements that are successfully processed but contain zero instrument matches within the EasyEquities ecosystem, the current system provides misleading messaging suggesting data extraction is possible. This creates user confusion and a poor experience, particularly after successfully unlocking password-protected documents.
+
+### User Experience Issues Identified
+
+1. **Misleading Success Messages**: "Portfolio Holdings Found: 0 instruments detected" followed by "I can help extract this information"
+2. **Inactive Buttons**: "Extract & Pre-Populate Portfolio" button appears but has nothing to extract
+3. **Lack of Guidance**: No clear explanation of why no matches were found
+4. **Missing Options**: No guidance on how users can proceed with their transfer
+
+### Enhanced Solution Design
+
+#### 1. Intelligent Analysis Response Logic
+
+```python
+# app/services/gemini_pdf_processor.py (Enhancement)
+def analyze_document_with_match_assessment(self, pdf_bytes: bytes, filename: str) -> str:
+    """
+    Enhanced document analysis that includes match assessment and user guidance.
+    """
+    try:
+        # First perform standard document analysis
+        analysis = self.analyze_document(pdf_bytes, filename)
+        
+        # Then perform extraction to assess instrument matches
+        extraction_result = self.process_pdf_with_password_handling(pdf_bytes)
+        
+        if extraction_result.get('success', False):
+            portfolio_entries = extraction_result.get('portfolio_entries', [])
+            
+            if len(portfolio_entries) == 0:
+                # No instruments found - provide enhanced guidance
+                return self._create_zero_match_response(filename, analysis, extraction_result)
+            else:
+                # Standard response with match count
+                return self._create_match_found_response(filename, analysis, extraction_result)
+        
+        return analysis
+        
+    except Exception as e:
+        return f"I encountered an error analyzing your document: {str(e)}"
+
+def _create_zero_match_response(self, filename: str, analysis: str, extraction_result: Dict) -> str:
+    """Create specialized response for zero-match scenarios."""
+    
+    document_metadata = extraction_result.get('document_metadata', {})
+    broker = document_metadata.get('broker_name', 'your broker')
+    doc_type = document_metadata.get('document_type', 'portfolio statement')
+    
+    return f"""
+📄 **Document Analysis Complete**
+
+I've successfully analyzed your {doc_type} from {broker} ("{filename}").
+
+**Analysis Results:**
+✅ **Document Processing**: Successfully extracted data from your statement
+❌ **Instrument Matches**: None of your holdings are currently available in the EasyEquities ecosystem
+
+**What This Means:**
+Your portfolio contains instruments that are not currently offered through EasyEquities. This could be because:
+- Your holdings are from international exchanges not yet supported
+- Specific instruments haven't been added to our platform yet  
+- Holdings are in asset classes we don't currently support (bonds, options, etc.)
+
+**Your Options to Proceed:**
+
+🔄 **Option 1: Transfer Available Cash**
+If your statement shows cash positions, you can transfer those funds and use them to invest in similar EasyEquities instruments.
+
+📋 **Option 2: Request Instrument Addition**  
+We can review your holdings for potential future addition to our platform.
+
+💰 **Option 3: Liquidate & Transfer**
+You could liquidate positions with your current broker and transfer the proceeds as cash to invest in available EasyEquities instruments.
+
+📞 **Option 4: Speak to Our Team**
+Our investment specialists can review your portfolio and suggest the best transfer approach.
+
+Would you like me to help you explore any of these options?
+"""
+
+def _create_match_found_response(self, filename: str, analysis: str, extraction_result: Dict) -> str:
+    """Create response for successful matches."""
+    
+    portfolio_entries = extraction_result.get('portfolio_entries', [])
+    document_metadata = extraction_result.get('document_metadata', {})
+    
+    security_status = '🔒 Password-protected (unlocked)' if extraction_result.get('was_password_protected') else '🔓 Standard document'
+    
+    return f"""
+✅ **Document Analysis Complete!**
+
+I've successfully analyzed your document "{filename}".
+
+**Document Summary:**
+- **Type:** {document_metadata.get('document_type', 'Portfolio Statement')}
+- **Broker:** {document_metadata.get('broker_name', 'Detected automatically')}
+- **Security:** {security_status}
+
+✅ **Portfolio Holdings Found:** {len(portfolio_entries)} instruments detected and available in EasyEquities
+
+Great news! I found instruments in your portfolio that are available for transfer to EasyEquities.
+
+I can help extract this information and pre-populate your portfolio configuration.
+"""
+```
+
+#### 2. Enhanced AI Assistance Page Response Handling
+
+```python
+# app/pages/1_AI_Assistance.py (Enhancement)
+def handle_successful_pdf_processing(uploaded_file, result):
+    """Enhanced handling that differentiates between extraction scenarios."""
+    
+    # Check if this was a zero-match scenario
+    if ('portfolio_entries' in result and 
+        len(result.get('portfolio_entries', [])) == 0):
+        handle_zero_match_scenario(uploaded_file, result)
+    elif 'portfolio_entries' in result:
+        handle_successful_extraction(uploaded_file, result)
+    else:
+        # Standard document analysis
+        handle_document_analysis(uploaded_file, result)
+
+def handle_zero_match_scenario(uploaded_file, result):
+    """Handle scenario where PDF was processed but no instruments match."""
+    
+    # Store processing results for potential future use
+    st.session_state['pdf_processing_result'] = result
+    st.session_state['zero_match_scenario'] = True
+    
+    # Enhanced zero-match guidance already provided by processor
+    # Just rerun to show the analysis
+    st.rerun()
+
+def handle_document_analysis(uploaded_file, result):
+    """Handle standard document analysis flow."""
+    
+    processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
+    pdf_bytes = uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else st.session_state.get(f'uploaded_file_info_{uploaded_file.name}', {}).get('bytes')
+    
+    if pdf_bytes:
+        # Use enhanced analysis that includes match assessment
+        analysis = processor.analyze_document_with_match_assessment(pdf_bytes, uploaded_file.name)
+        
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": analysis
+        })
+        
+        # Store PDF data but mark analysis complete
+        st.session_state['pending_pdf'] = {
+            'file_name': uploaded_file.name,
+            'pdf_bytes': pdf_bytes,
+            'processor': processor,
+            'was_password_protected': result.get('was_password_protected', False),
+            'analysis_complete': True
+        }
+        
+        st.rerun()
+```
+
+#### 3. Smart Button Management
+
+```python
+# app/pages/1_AI_Assistance.py (Smart Button Logic)
+def show_extraction_options():
+    """Show extraction options only when appropriate."""
+    
+    if 'pending_pdf' not in st.session_state:
+        return
+        
+    # Check if this is a zero-match scenario
+    if st.session_state.get('zero_match_scenario', False):
+        show_zero_match_options()
+        return
+        
+    # Check if analysis is complete and extraction hasn't been done
+    pdf_data = st.session_state['pending_pdf']
+    if (pdf_data.get('analysis_complete', False) and 
+        not st.session_state.get('pdf_extraction_completed', False)):
+        
+        show_standard_extraction_options()
+
+def show_zero_match_options():
+    """Show options for zero-match scenarios."""
+    
+    st.markdown("---")
+    st.markdown("### 🔄 How Would You Like to Proceed?")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("💰 Transfer Cash Only", use_container_width=True, type="secondary"):
+            handle_cash_only_transfer()
+    
+    with col2:
+        if st.button("📋 Request Instruments", use_container_width=True, type="secondary"):
+            handle_instrument_request()
+    
+    with col3:
+        if st.button("💡 Get Alternatives", use_container_width=True, type="secondary"):
+            handle_alternative_suggestions()
+    
+    with col4:
+        if st.button("📞 Speak to Team", use_container_width=True, type="primary"):
+            handle_team_consultation()
+
+def show_standard_extraction_options():
+    """Show standard extraction options for matched scenarios."""
+    
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("✅ Extract & Pre-populate Portfolio", 
+                   type="primary", 
+                   use_container_width=True,
+                   key="extract_portfolio"):
+            extract_and_populate_portfolio()
+    
+    with col2:
+        if st.button("💬 Continue Chatting", 
+                   use_container_width=True,
+                   key="continue_chat"):
+            st.info("You can ask me questions about the document or continue with manual portfolio setup.")
+```
+
+#### 4. Zero-Match Option Handlers
+
+```python
+# app/pages/1_AI_Assistance.py (Option Handlers)
+def handle_cash_only_transfer():
+    """Handle cash-only transfer option."""
+    
+    response = """
+💰 **Cash Transfer Guidance**
+
+Since none of your current holdings are available on EasyEquities, you can:
+
+1. **Identify Cash Positions**: Check your statement for any cash or money market holdings
+2. **Transfer Available Funds**: These can be transferred directly to your EasyEquities account
+3. **Invest in Alternatives**: Use transferred funds to invest in similar EasyEquities instruments
+
+**Next Steps:**
+- Navigate to the Portfolio page to manually configure any cash transfers
+- Or continue to the Submit page to request assistance from our team
+
+Would you like me to help you identify similar instruments available on EasyEquities?
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response
+    })
+    st.rerun()
+
+def handle_instrument_request():
+    """Handle instrument addition request."""
+    
+    response = """
+📋 **Instrument Addition Request**
+
+I can help you request the addition of your specific holdings to the EasyEquities platform.
+
+**What We'll Need:**
+- List of your current holdings (already extracted from your statement)
+- Your contact information for follow-up
+- Priority ranking of which instruments are most important to you
+
+**Timeline:**
+- Our product team reviews requests monthly
+- High-demand instruments are prioritized
+- You'll be notified when instruments become available
+
+**Immediate Options:**
+- Transfer available cash positions now
+- Find similar instruments currently available on EasyEquities
+
+Shall I prepare an instrument addition request for you?
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant", 
+        "content": response
+    })
+    st.rerun()
+
+def handle_alternative_suggestions():
+    """Handle alternative investment suggestions."""
+    
+    response = """
+💡 **Alternative Investment Suggestions**
+
+Based on your portfolio analysis, I can suggest similar instruments available on EasyEquities:
+
+**How This Works:**
+1. **Asset Analysis**: I'll review your current holdings by asset class and geography
+2. **EasyEquities Matching**: Find similar ETFs, stocks, or funds on our platform  
+3. **Risk Alignment**: Suggest alternatives with similar risk/return profiles
+4. **Diversification**: Maintain your desired portfolio allocation
+
+**Example Alternatives:**
+- US Tech stocks → EasyEquities US Tech ETFs
+- SA listed shares → Similar companies on our JSE offering
+- International exposure → EasyEquities international ETF options
+
+Would you like me to analyze your holdings and suggest specific alternatives?
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response
+    })
+    st.rerun()
+
+def handle_team_consultation():
+    """Handle team consultation request."""
+    
+    response = """
+📞 **Expert Consultation**
+
+Our investment specialists can provide personalized guidance for your portfolio transfer.
+
+**What Our Team Can Help With:**
+- **Portfolio Analysis**: Detailed review of your current holdings
+- **Transfer Strategy**: Optimal approach for your specific situation  
+- **Tax Implications**: Understanding any tax consequences of transfers
+- **Investment Planning**: Long-term strategy alignment with EasyEquities offerings
+- **Timeline Management**: Coordinated transfer execution
+
+**Consultation Process:**
+1. **Document Review**: We'll analyze your uploaded statement
+2. **Strategy Session**: 30-minute consultation call
+3. **Custom Plan**: Personalized transfer roadmap
+4. **Implementation Support**: Ongoing assistance during transfer
+
+**To Schedule:**
+- Continue to the Submit page
+- Select "Request Expert Consultation" 
+- We'll contact you within 2 business days
+
+Ready to schedule your consultation?
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response
+    })
+    
+    # Set flag to highlight consultation option on submit page
+    st.session_state['request_consultation'] = True
+    st.rerun()
+```
+
+#### 5. Enhanced Submission Integration
+
+```python
+# app/components/submission.py (Enhancement)
+def handle_zero_match_submission(selected_instruments, user_info, submission_notes):
+    """Handle submission for zero-match scenarios."""
+    
+    submission_data = {
+        "user_info": user_info,
+        "scenario_type": "zero_match_portfolio",
+        "pdf_analysis": st.session_state.get('pdf_processing_result', {}),
+        "selected_options": st.session_state.get('zero_match_options', []),
+        "consultation_requested": st.session_state.get('request_consultation', False),
+        "submission_notes": submission_notes,
+        "submission_timestamp": datetime.datetime.now().isoformat()
+    }
+    
+    # Generate specialized report for zero-match scenarios
+    pdf_bytes = generate_zero_match_analysis_report(submission_data)
+    
+    # Send email with specialized messaging
+    send_zero_match_submission_email(
+        submission_data=submission_data,
+        pdf_bytes=pdf_bytes
+    )
+
+def generate_zero_match_analysis_report(submission_data: Dict) -> bytes:
+    """Generate specialized PDF report for zero-match scenarios."""
+    
+    # Enhanced PDF generation that includes:
+    # - Document analysis summary
+    # - Reasons for zero matches
+    # - Client's selected options
+    # - Recommended next steps
+    # - Contact information for follow-up
+    
+    pass  # Implementation details...
+```
+
+### Integration with Existing Workflow
+
+#### Session State Enhancements
+```python
+# app/utils.py (Additional State Management)
+def initialize_zero_match_state():
+    """Initialize state for zero-match scenario handling."""
+    
+    st.session_state.setdefault('zero_match_scenario', False)
+    st.session_state.setdefault('zero_match_options', [])
+    st.session_state.setdefault('request_consultation', False)
+    st.session_state.setdefault('alternative_suggestions', [])
+```
+
+#### UI/UX Consistency
+- **Brand Colors**: All new buttons use consistent EasyEquities color scheme
+- **Progressive Disclosure**: Options revealed based on user choices
+- **Clear Messaging**: Professional, helpful tone throughout
+- **Fallback Options**: Always provide multiple paths forward
+
+### Business Benefits
+
+#### Enhanced User Experience
+1. **Clear Communication**: Users understand exactly why no matches were found
+2. **Multiple Options**: Various paths forward based on individual needs
+3. **Expert Support**: Direct path to professional consultation
+4. **Reduced Friction**: Eliminates confusion about non-functional buttons
+
+#### Operational Efficiency  
+1. **Qualified Leads**: Better understanding of client needs before consultation
+2. **Self-Service Options**: Many users can proceed without direct support
+3. **Product Intelligence**: Data on frequently requested instruments
+4. **Improved Conversion**: More users complete the onboarding process
+
+### Testing Strategy
+
+#### Test Scenarios for Password Handling
+1. **Standard Password Protection**: Test with basic password-protected PDFs
+2. **Wrong Password Handling**: Verify retry logic and user feedback
+3. **Multiple Attempts**: Test lockout after maximum attempts
+4. **Complex Passwords**: Test with special characters, Unicode, long passwords
+5. **Encryption Methods**: Test various PDF encryption standards
+6. **Session Cleanup**: Verify passwords are cleared from memory
+
+#### Test Scenarios for Zero-Match Handling
+7. **Zero-Match Detection**: Verify correct identification of no-match scenarios
+8. **Option Selection**: Test all four user option paths
+9. **Consultation Requests**: Verify proper flagging for expert consultation
+10. **Mixed Scenarios**: Test partial matches vs complete zero matches
+11. **Error Recovery**: Handle extraction errors in zero-match scenarios
+
+### Performance Considerations
+
+#### Optimization Strategies
+1. **Memory Management**: Clear decrypted PDF data after processing
+2. **Timeout Handling**: Implement timeouts for unlock operations  
+3. **Caching**: Avoid caching unlocked PDF data for security
+4. **Background Processing**: Handle decryption asynchronously when possible
+
 ## Future Enhancements
 
 ### Advanced Features
@@ -1286,6 +2283,9 @@ Based on [Google's pricing](https://ai.google.dev/gemini-api/docs/document-proce
 3.  **Template Learning**: Learn from user corrections
 4.  **Intelligent Matching**: ML-based instrument matching
 5.  **Historical Analysis**: Track portfolio changes over time
+6.  **🔒 Advanced Encryption Support**: Handle certificate-based PDF encryption
+7.  **🔑 Password Strength Validation**: Provide feedback on password requirements
+8.  **🛡️ Biometric Unlock**: Future integration with biometric authentication
 
 ### Integration Opportunities
 1.  **Email Integration**: Process emailed statements

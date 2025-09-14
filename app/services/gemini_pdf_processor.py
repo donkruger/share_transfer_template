@@ -1,12 +1,13 @@
 # app/services/gemini_pdf_processor.py
 
 import google.generativeai as genai
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import base64
 import json
 import streamlit as st
 from datetime import datetime
 import logging
+import fitz  # PyMuPDF
 
 logger = logging.getLogger(__name__)
 
@@ -460,3 +461,147 @@ class GeminiPDFProcessor:
         except Exception as e:
             logger.error(f"Error analyzing document: {str(e)}")
             return f"I encountered an error analyzing your document: {str(e)}. The document may be corrupted or in an unsupported format."
+    
+    def check_pdf_encryption(self, pdf_bytes: bytes) -> Tuple[bool, Optional[str]]:
+        """
+        Check if PDF is password-protected and detect encryption type.
+        
+        Args:
+            pdf_bytes: PDF file content as bytes
+        
+        Returns:
+            Tuple of (is_encrypted: bool, encryption_info: str)
+        """
+        try:
+            logger.info("Checking PDF encryption status")
+            # Create temporary PDF document from bytes
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            
+            if doc.is_encrypted:
+                # Determine encryption level
+                encryption_info = "Standard password protection detected"
+                try:
+                    metadata = doc.metadata
+                    if metadata and metadata.get('encryption'):
+                        if metadata.get('encryption') == 'Standard Security Handler':
+                            encryption_info = "Document uses standard PDF encryption"
+                        else:
+                            encryption_info = f"Document uses {metadata.get('encryption')}"
+                except:
+                    # If we can't get detailed metadata, use generic message
+                    pass
+                
+                doc.close()
+                logger.info(f"PDF is encrypted: {encryption_info}")
+                return True, encryption_info
+            else:
+                doc.close()
+                logger.info("PDF is not encrypted")
+                return False, None
+                
+        except Exception as e:
+            logger.warning(f"Error checking PDF encryption: {str(e)}")
+            # If we can't open the PDF at all, assume it might be encrypted
+            return True, f"Unable to analyze PDF structure: {str(e)}"
+    
+    def unlock_pdf(self, pdf_bytes: bytes, password: str) -> Tuple[bool, Optional[bytes], Optional[str]]:
+        """
+        Attempt to unlock password-protected PDF.
+        
+        Args:
+            pdf_bytes: Original PDF file bytes
+            password: User-provided password
+            
+        Returns:
+            Tuple of (success: bool, unlocked_bytes: bytes, error_message: str)
+        """
+        try:
+            logger.info("Attempting to unlock password-protected PDF")
+            # Open PDF with password
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            
+            if doc.is_encrypted:
+                # Attempt authentication
+                success = doc.authenticate(password)
+                
+                if success:
+                    logger.info("PDF successfully unlocked")
+                    # Create unlocked PDF bytes
+                    unlocked_bytes = doc.tobytes()
+                    doc.close()
+                    return True, unlocked_bytes, None
+                else:
+                    logger.warning("Incorrect password provided")
+                    doc.close()
+                    return False, None, "Incorrect password. Please verify your password and try again."
+            else:
+                # PDF wasn't encrypted after all
+                logger.info("PDF is not encrypted, returning original bytes")
+                doc.close()
+                return True, pdf_bytes, None
+                
+        except Exception as e:
+            logger.error(f"Error unlocking PDF: {str(e)}")
+            return False, None, f"Error unlocking PDF: {str(e)}"
+    
+    def process_pdf_with_password_handling(self, pdf_bytes: bytes, password: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Enhanced PDF processing with automatic password handling.
+        
+        Args:
+            pdf_bytes: PDF file content
+            password: Optional password if known
+            
+        Returns:
+            Processing result with encryption status
+        """
+        logger.info("Starting PDF processing with password handling")
+        
+        # Check if PDF is encrypted
+        is_encrypted, encryption_info = self.check_pdf_encryption(pdf_bytes)
+        
+        if is_encrypted and not password:
+            # Need password from user
+            logger.info("PDF is encrypted and no password provided")
+            return {
+                "success": False,
+                "requires_password": True,
+                "encryption_info": encryption_info,
+                "error": "PDF is password-protected. Please provide the password to continue."
+            }
+        
+        # Handle password-protected PDF
+        if is_encrypted and password:
+            logger.info("PDF is encrypted, attempting unlock with provided password")
+            success, unlocked_bytes, error_message = self.unlock_pdf(pdf_bytes, password)
+            
+            if not success:
+                logger.warning(f"Failed to unlock PDF: {error_message}")
+                return {
+                    "success": False,
+                    "requires_password": True,
+                    "encryption_info": encryption_info,
+                    "error": error_message
+                }
+            
+            # Use unlocked bytes for processing
+            pdf_bytes = unlocked_bytes
+            logger.info("PDF unlocked successfully, proceeding with extraction")
+        
+        # Continue with normal processing
+        try:
+            result = self.process_pdf(pdf_bytes)
+            # Add encryption metadata to result
+            if is_encrypted:
+                result['was_password_protected'] = True
+                result['encryption_info'] = encryption_info
+            else:
+                result['was_password_protected'] = False
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error processing unlocked PDF: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Error processing unlocked PDF: {str(e)}"
+            }

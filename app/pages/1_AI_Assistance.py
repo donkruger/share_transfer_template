@@ -194,24 +194,99 @@ render_sidebar()
 
 def process_uploaded_pdf(uploaded_file):
     """
-    Process the uploaded PDF and integrate results into chat conversation.
+    Enhanced PDF processing with password handling in chat interface.
     """
     with st.spinner("🔍 Analyzing your document..."):
         try:
-            # Initialize Gemini processor
+            # Initialize processor
             processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
             pdf_bytes = uploaded_file.read()
             
-            # Add upload notification to chat
+            # Add upload message to chat
             st.session_state.messages.append({
                 "role": "user",
-                "content": f"📎 I've uploaded: {uploaded_file.name}"
+                "content": f"📎 Uploaded document: {uploaded_file.name}"
             })
             
-            # Analyze document
+            # Check if password is needed
+            password = st.session_state.get(f'pdf_password_{uploaded_file.name}', None)
+            
+            # Attempt processing with password handling
+            result = processor.process_pdf_with_password_handling(pdf_bytes, password)
+            
+            if result.get('requires_password', False):
+                handle_password_protected_pdf(uploaded_file, result)
+            elif result.get('success', False):
+                handle_successful_pdf_processing(uploaded_file, result)
+            else:
+                handle_pdf_processing_error(uploaded_file, result)
+                
+        except Exception as e:
+            st.error(f"Error analyzing document: {str(e)}")
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"I encountered an error analyzing your document: {str(e)}. Please try uploading again or proceed with manual portfolio configuration."
+            })
+            st.rerun()
+
+def handle_password_protected_pdf(uploaded_file, result):
+    """Handle password-protected PDF with in-chat UI."""
+    # Add AI message about password requirement
+    encryption_info = result.get('encryption_info', 'Password protection detected')
+    
+    ai_message = f"""
+🔒 **Password-Protected Document Detected**
+
+Your document "{uploaded_file.name}" is password-protected.
+
+**Detected:** {encryption_info}
+
+Please enter the document password ABOVE to unlock and analyze your portfolio statement.
+
+⚠️ **Security Note:** Your password is used only for this session and is not stored.
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_message
+    })
+    
+    # Set flag to show password input
+    st.session_state[f'show_password_input_{uploaded_file.name}'] = True
+    
+    # Store file info for password retry
+    st.session_state[f'uploaded_file_info_{uploaded_file.name}'] = {
+        'name': uploaded_file.name,
+        'size': uploaded_file.size,
+        'bytes': uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else pdf_bytes
+    }
+    
+    # Rerun to show the message and trigger password input
+    st.rerun()
+
+def handle_successful_pdf_processing(uploaded_file, result):
+    """Handle successful PDF processing (existing functionality enhanced)."""
+    # First check if this was document analysis or extraction
+    if 'portfolio_entries' in result:
+        # This is extraction result
+        handle_successful_extraction(uploaded_file, result)
+    else:
+        # This is document analysis - perform analysis
+        processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
+        pdf_bytes = uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else st.session_state.get(f'uploaded_file_info_{uploaded_file.name}', {}).get('bytes')
+        
+        if pdf_bytes:
             analysis = processor.analyze_document(pdf_bytes, uploaded_file.name)
             
-            # Add AI analysis to chat
+            # Enhanced analysis message if document was password-protected
+            if result.get('was_password_protected', False):
+                enhanced_analysis = f"""✅ **Document Successfully Unlocked & Analyzed!**
+
+{analysis}
+
+**Security Status:** 🔒 Password-protected document was securely unlocked for analysis."""
+                analysis = enhanced_analysis
+            
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": analysis
@@ -221,19 +296,224 @@ def process_uploaded_pdf(uploaded_file):
             st.session_state['pending_pdf'] = {
                 'file_name': uploaded_file.name,
                 'pdf_bytes': pdf_bytes,
-                'processor': processor
+                'processor': processor,
+                'was_password_protected': result.get('was_password_protected', False)
             }
             # Reset extraction completed flag for new PDF
             st.session_state['pdf_extraction_completed'] = False
             
-            # Rerun to show the analysis in chat
             st.rerun()
+
+def handle_successful_extraction(uploaded_file, result):
+    """Handle successful portfolio data extraction."""
+    # Store processing results
+    st.session_state['pdf_processing_result'] = result
+    st.session_state['pending_pdf'] = {
+        'file_name': uploaded_file.name,
+        'pdf_bytes': uploaded_file.getvalue() if hasattr(uploaded_file, 'getvalue') else st.session_state.get(f'uploaded_file_info_{uploaded_file.name}', {}).get('bytes'),
+        'processor': GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"]),
+        'was_password_protected': result.get('was_password_protected', False)
+    }
+    
+    # Enhanced success message
+    security_status = '🔒 Password-protected (unlocked)' if result.get('was_password_protected') else '🔓 Standard document'
+    
+    success_message = f"""
+✅ **Document Analysis Complete!**
+
+I've successfully analyzed your document "{uploaded_file.name}".
+
+**Document Summary:**
+- **Type:** {result.get('document_metadata', {}).get('document_type', 'Portfolio Statement')}
+- **Broker:** {result.get('document_metadata', {}).get('broker_name', 'Detected automatically')}
+- **Security:** {security_status}
+
+**Portfolio Holdings Found:** {len(result.get('portfolio_entries', []))} instruments detected
+
+I can help extract this information and pre-populate your portfolio configuration.
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": success_message
+    })
+    
+    st.rerun()
+
+def handle_pdf_processing_error(uploaded_file, result):
+    """Handle PDF processing errors."""
+    error_message = result.get('error', 'Unknown error occurred')
+    
+    ai_error_response = f"""
+❌ **Document Processing Error**
+
+I encountered an issue processing "{uploaded_file.name}":
+
+**Error:** {error_message}
+
+**What you can try:**
+1. Verify the file is a valid PDF document
+2. If password-protected, ensure you have the correct password
+3. Try re-uploading the document
+4. Proceed with manual portfolio configuration if needed
+
+I'm here to help with any questions!
+"""
+    
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_error_response
+    })
+    
+    st.rerun()
+
+def render_password_input_interface(file_name):
+    """Render password input interface within chat context."""
+    if f'uploaded_file_info_{file_name}' not in st.session_state:
+        return
+    
+    file_info = st.session_state[f'uploaded_file_info_{file_name}']
+    
+    st.markdown("### 🔐 Enter PDF Password")
+    st.info(f"**Document:** {file_info['name']} ({file_info['size'] / 1024:.1f} KB)")
+    
+    with st.container():
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            password = st.text_input(
+                f"Password for {file_info['name']}:",
+                type="password",
+                key=f"password_input_{file_name}",
+                help="Enter the password to unlock your PDF document"
+            )
+        
+        with col2:
+            st.markdown("""
+            <style>
+            .stButton > button[kind="primary"] {
+                background-color: #f4942a !important;
+                border-color: #f4942a !important;
+            }
+            .stButton > button[kind="primary"]:hover {
+                background-color: #e8530f !important;
+                border-color: #e8530f !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🔓 Unlock PDF", type="primary", use_container_width=True, key=f"unlock_button_{file_name}"):
+                if password:
+                    # Store password and retry processing
+                    st.session_state[f'pdf_password_{file_name}'] = password
+                    st.session_state[f'show_password_input_{file_name}'] = False
+                    
+                    # Add user message to chat
+                    st.session_state.messages.append({
+                        "role": "user", 
+                        "content": "🔓 Provided password - attempting to unlock document"
+                    })
+                    
+                    # Retry processing
+                    retry_pdf_processing_with_password(file_name)
+                else:
+                    st.error("Please enter a password")
+
+    # Show password help section
+    with st.expander("❓ Help with Password-Protected PDFs", expanded=False):
+        st.markdown("""
+        **Common Password Sources:**
+        - Your account number
+        - Last 4 digits of your SSN/ID number
+        - Date of birth (DDMMYYYY format)
+        - Broker-provided default passwords
+        
+        **Security Notes:**
+        - Passwords are used only for this session
+        - No passwords are stored or logged
+        - Your document remains secure throughout processing
+        
+        **Troubleshooting:**
+        - Verify password spelling and capitalization
+        - Check for special characters or spaces
+        - Contact your broker if password is unknown
+        """)
+
+def retry_pdf_processing_with_password(file_name):
+    """Retry PDF processing with provided password."""
+    if f'uploaded_file_info_{file_name}' not in st.session_state:
+        st.error("File information not available for retry.")
+        return
+    
+    file_info = st.session_state[f'uploaded_file_info_{file_name}']
+    
+    with st.spinner("🔓 Unlocking and analyzing document..."):
+        try:
+            processor = GeminiPDFProcessor(st.secrets["llm_api"]["gemini_key"])
+            pdf_bytes = file_info['bytes']
+            password = st.session_state.get(f'pdf_password_{file_name}')
+            
+            # Attempt processing with password
+            result = processor.process_pdf_with_password_handling(pdf_bytes, password)
+            
+            if result.get('success', False):
+                # Success - add confirmation message
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "✅ **Document Successfully Unlocked!**\n\nI've successfully unlocked your password-protected document and can now analyze it."
+                })
+                
+                # Create mock uploaded file object for successful processing
+                class MockUploadedFile:
+                    def __init__(self, name, size, bytes_data):
+                        self.name = name
+                        self.size = size
+                        self._bytes = bytes_data
+                    
+                    def getvalue(self):
+                        return self._bytes
+                    
+                    def read(self):
+                        return self._bytes
+                
+                mock_file = MockUploadedFile(file_info['name'], file_info['size'], file_info['bytes'])
+                handle_successful_pdf_processing(mock_file, result)
+            
+            elif result.get('requires_password', False):
+                # Wrong password - show retry
+                error_message = result.get('error', 'Incorrect password')
+                
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": f"❌ **Unlock Failed:** {error_message}\n\nPlease verify your password and try again."
+                })
+                
+                # Reset password and show input again
+                if f'pdf_password_{file_name}' in st.session_state:
+                    del st.session_state[f'pdf_password_{file_name}']
+                st.session_state[f'show_password_input_{file_name}'] = True
+                
+                st.rerun()
+            
+            else:
+                # Other error
+                class MockUploadedFile:
+                    def __init__(self, name, size, bytes_data):
+                        self.name = name
+                        self.size = size
+                        self._bytes = bytes_data
+                    
+                    def getvalue(self):
+                        return self._bytes
+                
+                mock_file = MockUploadedFile(file_info['name'], file_info['size'], file_info['bytes'])
+                handle_pdf_processing_error(mock_file, result)
             
         except Exception as e:
-            st.error(f"Error analyzing document: {str(e)}")
+            st.error(f"Error during password retry: {str(e)}")
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": f"I encountered an error analyzing your document: {str(e)}. Please try uploading again or proceed with manual portfolio configuration."
+                "content": f"I encountered an error while trying to unlock your document: {str(e)}. Please try again or proceed with manual portfolio configuration."
             })
             st.rerun()
 
@@ -592,6 +872,12 @@ with st.container():
             
             if st.button("Analyze Document", type="primary", use_container_width=True):
                 process_uploaded_pdf(uploaded_file)
+
+# Check if we need to show password input for any file
+for key in st.session_state.keys():
+    if key.startswith('show_password_input_') and st.session_state[key]:
+        file_name = key.replace('show_password_input_', '')
+        render_password_input_interface(file_name)
 
 st.markdown("---")
 

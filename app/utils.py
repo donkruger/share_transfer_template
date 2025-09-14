@@ -92,6 +92,13 @@ def initialize_state():
         # NEW: Portfolio management flags
         st.session_state.setdefault("confirm_clear_portfolio", False)
         
+        # PDF password handling state (security-focused)
+        st.session_state.setdefault("pdf_passwords", {})  # filename -> password mapping (temporary)
+        st.session_state.setdefault("password_attempts", {})  # filename -> attempt count
+        st.session_state.setdefault("unlock_status", {})  # filename -> status mapping
+        st.session_state.setdefault("max_password_attempts", 3)
+        st.session_state.setdefault("password_timeout", 300)  # 5 minutes
+        
         st.session_state.state_initialized = True
 
 @st.cache_data
@@ -498,4 +505,52 @@ def svg_image_html(path: Path, width: int = 200) -> str:
         )
     except Exception:
         # If the file cannot be read, return empty string to avoid breaking the UI
-        return "" 
+        return ""
+
+def cleanup_sensitive_data():
+    """Clean up passwords and sensitive data from session state for security."""
+    keys_to_remove = [key for key in st.session_state.keys() 
+                     if key.startswith('pdf_password_')]
+    
+    for key in keys_to_remove:
+        del st.session_state[key]
+    
+    # Clean up file info that may contain PDF bytes
+    file_info_keys = [key for key in st.session_state.keys() 
+                     if key.startswith('uploaded_file_info_')]
+    
+    for key in file_info_keys:
+        del st.session_state[key]
+    
+    # Clean up password input flags
+    password_input_keys = [key for key in st.session_state.keys() 
+                          if key.startswith('show_password_input_')]
+    
+    for key in password_input_keys:
+        del st.session_state[key]
+
+def initialize_password_handling_state():
+    """Initialize session state for password-protected PDF handling."""
+    # This is called by initialize_state(), but can be called separately if needed
+    st.session_state.setdefault('pdf_passwords', {})  # filename -> password mapping
+    st.session_state.setdefault('password_attempts', {})  # filename -> attempt count
+    st.session_state.setdefault('unlock_status', {})  # filename -> status mapping
+    
+    # Security settings
+    st.session_state.setdefault('max_password_attempts', 3)
+    st.session_state.setdefault('password_timeout', 300)  # 5 minutes
+
+def get_encryption_metadata_for_submission():
+    """Get encryption metadata for email submissions."""
+    return {
+        "document_security": {
+            "was_password_protected": st.session_state.get('was_password_protected', False),
+            "encryption_info": st.session_state.get('encryption_info', 'None'),
+            "unlock_timestamp": st.session_state.get('unlock_timestamp'),
+            "security_note": "Document was securely processed and passwords were not stored"
+        }
+    }
+
+# Register cleanup on session end for security
+import atexit
+atexit.register(cleanup_sensitive_data) 

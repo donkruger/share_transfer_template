@@ -462,7 +462,124 @@ def main():
     
     if user_name and user_id:
         # Wallet Selection Section
-        st.markdown("## Choose Your Investment Context")
+        st.markdown("## Check whether your instruments are available in EasyEquities")
+        
+        # Journey Selection Section with improved styling
+        st.markdown("""
+        <style>
+        .journey-card {
+            background: linear-gradient(135deg, #fff8f0 0%, #ffffff 100%);
+            border: 2px solid #f4942a;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(244, 148, 42, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .journey-card:hover {
+            box-shadow: 0 8px 25px rgba(244, 148, 42, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .journey-title {
+            color: #f4942a;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .journey-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        
+        .journey-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .journey-benefits {
+            background: rgba(244, 148, 42, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .journey-benefits ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .journey-benefits li {
+            margin: 5px 0;
+            color: #555;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Journey Options
+        st.markdown("**Choose your preferred method to check instrument availability:**")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("""
+            <div class="journey-card">
+                <div class="journey-title">
+                    <span class="journey-icon">🤖</span>
+                    AI-Powered Statement Upload
+                </div>
+                <div class="journey-description">
+                    Upload your investment statement and let AI automatically extract and populate your instrument information.
+                </div>
+                <div class="journey-benefits">
+                    <strong>Perfect for:</strong>
+                    <ul>
+                        <li>Multiple instruments in one statement</li>
+                        <li>Complex portfolio transfers</li>
+                        <li>Time-saving automation</li>
+                        <li>Reducing manual entry errors</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🚀 Start with AI Assistance", type="primary", use_container_width=True):
+                st.switch_page("pages/1_AI_Assistance.py")
+        
+        with col2:
+            st.markdown("""
+            <div class="journey-card">
+                <div class="journey-title">
+                    <span class="journey-icon">🔍</span>
+                    Manual Instrument Search
+                </div>
+                <div class="journey-description">
+                    Search for instruments one by one using the search field below to verify availability in EasyEquities.
+                </div>
+                <div class="journey-benefits">
+                    <strong>Perfect for:</strong>
+                    <ul>
+                        <li>Single or few instruments</li>
+                        <li>Specific instrument verification</li>
+                        <li>Direct control over search process</li>
+                        <li>Quick availability checks</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.info("👇 Continue below to use manual search")
+        
+        st.markdown("---")
+        
+        # Wallet Selection (for manual search)
+        st.markdown("### Manual Search Configuration")
+        st.markdown("Select your wallet context for instrument availability checking:")
         
         with st.container():
             # Add "All Wallets" as the first option
@@ -496,7 +613,7 @@ def main():
                     default_index = wallet_ids.index(st.session_state.selected_wallet_id)
                 
                 selected_index = st.selectbox(
-                    "Select the wallet to which your portfolio transfer applies:",
+                    "Wallet Context:",
                     range(len(wallet_options)),
                     index=default_index,
                     format_func=lambda x: wallet_labels[x],
