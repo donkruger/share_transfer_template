@@ -426,7 +426,7 @@ def main():
                     "Your Name",
                     value=st.session_state.get("user_name", ""),
                     placeholder="Enter your full name",
-                    help="This will be used to personalize your search experience",
+                    help="Your name as it appears on your EasyEquities account",
                     key="user_name_input"
                 )
             
@@ -435,7 +435,7 @@ def main():
                     "User ID", 
                     value=st.session_state.get("user_id", ""),
                     placeholder="Enter your EasyEquities user ID",
-                    help="Your unique identifier for tracking and support",
+                    help="Your EasyEquities user ID (found in your account settings)",
                     key="user_id_input"
                 )
         
@@ -656,15 +656,8 @@ def main():
 
     # Step 3: Search Interface (only show if user info and wallet are complete)
     if user_name and user_id and selected_wallet:
-        # Search Section Header - REMOVED
-        # st.markdown("## Search for Instruments")
-        # st.markdown(f"**Searching in:** {selected_wallet_info.get('display_name', selected_wallet)} • **User:** {user_name}")
-        
         # Search Interface
         search_params = search_interface.render()
-        
-        # Search Tips - COMMENTED OUT
-        # render_search_tips()
         
         # Perform Search
         if search_params['search_triggered'] and search_params['query'].strip():
@@ -690,7 +683,6 @@ def main():
         # Display Results
         current_results = st.session_state.get("current_results", [])
         if current_results:
-            # st.info(f"Displaying {len(current_results)} search results...") - COMMENTED OUT
             # Display results with selection
             result_display.render_results(current_results, allow_selection=True)
             
@@ -705,10 +697,6 @@ def main():
         if selected_instruments and user_name and user_id and selected_wallet:
             st.markdown("---")
             selection_panel.render_persistent_panel(location="main")
-
-    # else:
-        # Show information about the app while user completes onboarding - REMOVED
-        # About Smart Instrument Finder expandable card has been removed for cleaner UI
 
     # --- Footer ---
     st.markdown("---")

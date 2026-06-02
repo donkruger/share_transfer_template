@@ -13,7 +13,7 @@ def render_feedback_component() -> Optional[Dict[str, Any]]:
         st.markdown("""
         <style>
             .callout-info {
-                background-color: #ed1847 !important;
+                background-color: #f4942a !important;
                 color: white !important;
                 padding: 1rem;
                 border-radius: 0.5rem;
@@ -45,7 +45,7 @@ def render_feedback_component() -> Optional[Dict[str, Any]]:
         category = persist_selectbox(
             "Feedback Category", 
             "feedback_category", 
-            options=["", "Bug Report", "Feature Request", "Improvement", "Other"]
+            options=["Select a category...", "Bug Report", "Feature Request", "Improvement", "Other"]
         )
         
         # Custom rating component with project styling
@@ -100,7 +100,7 @@ def render_satisfaction_rating() -> Optional[int]:
         index=default_index,
         format_func=lambda x: next(label for val, label in rating_options if val == x),
         key="feedback_rating_selectbox",
-        label_visibility="collapsed"
+        label_visibility="visible"
     )
     
     # Update session state and return the rating

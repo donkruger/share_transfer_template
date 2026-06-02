@@ -11,7 +11,7 @@ import base64
 # --- PATH SETUP ---
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from app.components.sidebar import render_sidebar
-from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, SIDEBAR_GRADIENT_CSS
+from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, ONBOARDING_SECTION_CSS, SIDEBAR_GRADIENT_CSS, SIDEBAR_FINAL_ENFORCEMENT_CSS
 from app.utils import initialize_state
 from app.services.gemini_pdf_processor import GeminiPDFProcessor
 from app.services.portfolio_service import PortfolioService
@@ -46,66 +46,16 @@ if 'messages' not in st.session_state:
 st.markdown(GOOGLE_FONTS_CSS, unsafe_allow_html=True)
 st.markdown(GRADIENT_TITLE_CSS, unsafe_allow_html=True)
 st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
-
-# Apply sidebar gradient styling to match main page
+st.markdown(ONBOARDING_SECTION_CSS, unsafe_allow_html=True)
 st.markdown(SIDEBAR_GRADIENT_CSS, unsafe_allow_html=True)
-
-# Fix sidebar metrics white background issue on this page
-st.markdown("""
-<style>
-    /* Remove white background from sidebar metrics - using correct selectors */
-    [data-testid="stSidebar"] .stMetric {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    [data-testid="stSidebar"] div[data-testid="metric-container"] {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Target the emotion-cache classes directly if needed */
-    [data-testid="stSidebar"] .st-emotion-cache-0,
-    [data-testid="stSidebar"] .e14qm3310,
-    [data-testid="stSidebar"] .e1f1d6gn0,
-    [data-testid="stSidebar"] [class*="st-emotion-cache"] {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Ensure all child elements are also transparent */
-    [data-testid="stSidebar"] .stMetric * {
-        background-color: transparent !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Additional comprehensive spacing removal for this page
-st.markdown("""
-<style>
-    /* Ensure gradient title sits flush at top */
-    .gradient-title {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    /* Remove any remaining top spacing */
-    .main .block-container > div:first-child {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(SIDEBAR_FINAL_ENFORCEMENT_CSS, unsafe_allow_html=True)
 
 # --- GEMINI API CONFIGURATION ---
 try:
     # Get the API key from Streamlit secrets
     GEMINI_API_KEY = st.secrets["llm_api"]["gemini_key"]
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3.5-flash')
 except (KeyError, FileNotFoundError):
     st.error("❗ Gemini API key not found. Please add it to your `secrets.toml` file.")
     st.stop()
@@ -521,14 +471,10 @@ def extract_and_populate_portfolio():
     """
     Extract structured data from PDF and populate portfolio.
     """
-    st.write("**FUNCTION CALLED**: extract_and_populate_portfolio() started")
-    
     if 'pending_pdf' not in st.session_state:
         st.error("No PDF data available for extraction.")
-        st.write("**ERROR**: No pending PDF found in session state")
         return
     
-    # Check if user has completed onboarding
     if not st.session_state.get('user_name') or not st.session_state.get('user_id') or not st.session_state.get('selected_wallet_id'):
         st.warning("""
         **Please complete your setup first!**
@@ -545,205 +491,80 @@ def extract_and_populate_portfolio():
     
     with st.spinner("Extracting portfolio data..."):
         try:
-            st.write("**DEBUG**: Starting PDF extraction process...")
-            # Extract structured data
             extracted_data = pdf_data['processor'].process_pdf(pdf_data['pdf_bytes'])
-            st.write(f"**DEBUG**: Extraction completed. Success: {extracted_data.get('success', 'Unknown')}")
             
             if not extracted_data.get('success'):
                 st.error(f"Extraction failed: {extracted_data.get('error', 'Unknown error')}")
-                if extracted_data.get('raw_response'):
-                    with st.expander("Debug: Raw Response"):
-                        st.code(extracted_data['raw_response'])
                 return
             
-            # ALWAYS show debug info, regardless of entries found
-            with st.expander("Full Extraction Debug (Always Shown)", expanded=True):
-                st.write("**Extraction Success:**", extracted_data.get('success', False))
-                st.write("**Portfolio Entries Found:**", len(extracted_data.get('portfolio_entries', [])))
-                st.write("**Document Type:**", extracted_data.get('document_metadata', {}).get('document_type', 'Unknown'))
-                st.write("**Broker:**", extracted_data.get('document_metadata', {}).get('broker_name', 'Unknown'))
-                
-                # Show confidence scores
-                confidence = extracted_data.get('confidence_scores', {})
-                if confidence:
-                    st.write("**Confidence Scores:**")
-                    for key, value in confidence.items():
-                        st.write(f"• {key}: {value}")
-                
-                # Show extraction notes
-                notes = extracted_data.get('extraction_notes', [])
-                if notes:
-                    st.write("**Extraction Notes:**")
-                    for note in notes:
-                        st.write(f"• {note}")
-                else:
-                    st.write("**Extraction Notes:** None")
-                
-                # Show ALL extracted data
-                st.write("**Full Extracted Data Structure:**")
-                st.json(extracted_data)
-                
-                # Show raw response if available
-                if extracted_data.get('raw_response'):
-                    with st.expander("Raw Gemini Response", expanded=False):
-                        st.code(extracted_data['raw_response'][:3000] + "..." if len(extracted_data['raw_response']) > 3000 else extracted_data['raw_response'])
-            
-            # Show detailed extraction debug info
-            with st.expander("Extraction Debug Details", expanded=True):
-                st.write(f"**Portfolio Entries Found:** {len(extracted_data.get('portfolio_entries', []))}")
-                st.write(f"**Document Type:** {extracted_data.get('document_metadata', {}).get('document_type', 'Unknown')}")
-                st.write(f"**Broker:** {extracted_data.get('document_metadata', {}).get('broker_name', 'Unknown')}")
-                
-                # Show confidence scores
-                confidence = extracted_data.get('confidence_scores', {})
-                if confidence:
-                    st.write("**Confidence Scores:**")
-                    for key, value in confidence.items():
-                        st.write(f"• {key}: {value}")
-                
-                # Show raw extraction notes
-                notes = extracted_data.get('extraction_notes', [])
-                if notes:
-                    st.write("**Extraction Notes:**")
-                    for note in notes:
-                        st.write(f"• {note}")
-                
-                # Show portfolio entries details
-                entries = extracted_data.get('portfolio_entries', [])
-                if entries:
-                    st.write("**Extracted Portfolio Entries:**")
-                    for i, entry in enumerate(entries):
-                        st.write(f"{i+1}. {entry.get('instrument_name', 'N/A')} ({entry.get('ticker_symbol', 'N/A')}) - Qty: {entry.get('quantity', 'N/A')}")
-                else:
-                    st.warning("No portfolio entries were extracted from the PDF")
-                
-                # Show raw response if available for debugging
-                if extracted_data.get('raw_response'):
-                    with st.expander("🔍 Raw Gemini Response (Debug)", expanded=False):
-                        st.code(extracted_data['raw_response'][:2000] + "..." if len(extracted_data['raw_response']) > 2000 else extracted_data['raw_response'])
-            
-            # Get selected instruments
             selected_instruments = SelectionManager.get_selections()
-            st.write(f"Debug: Currently have {len(selected_instruments)} selected instruments")
             
-            # Import to portfolio service
             import_result = PortfolioService.import_from_pdf_extraction(
                 extracted_data=extracted_data,
                 selected_instruments=selected_instruments
             )
             
-            # Show import results
-            with st.expander("Import Results", expanded=True):
-                st.write(f"**Newly Selected Instruments:** {import_result.get('newly_selected_count', 0)}")
-                st.write(f"**Portfolio Entries Created:** {import_result.get('imported_count', 0)}")
-                st.write(f"**Unmatched Entries:** {import_result.get('unmatched_count', 0)}")
-                
-                if import_result.get('errors'):
-                    st.write("**Errors:**")
-                    for error in import_result['errors']:
-                        st.write(f"• {error}")
-                        
-                if import_result.get('newly_selected'):
-                    st.write("**Newly Selected Instruments:**")
-                    for inst in import_result['newly_selected']:
-                        st.write(f"• {inst.get('name')} ({inst.get('ticker', 'N/A')})")
-            
-            # Store results in session
             st.session_state['pdf_extraction'] = extracted_data
             st.session_state['pdf_import_result'] = import_result
-            # Mark extraction as completed to hide the button
             st.session_state['pdf_extraction_completed'] = True
             
-            # Add success message to chat with detailed debug info
             newly_selected = import_result.get('newly_selected_count', 0)
             imported = import_result.get('imported_count', 0)
             unmatched = import_result.get('unmatched_count', 0)
-            
-            # Debug information
-            portfolio_entries = extracted_data.get('portfolio_entries', [])
-            extraction_notes = extracted_data.get('extraction_notes', [])
             
             success_message = f"""
 **Portfolio Data Extracted Successfully!**
 
 I've processed your document and here's what I found:
 
-**Extraction Summary:**
+**Document Summary:**
 - Document Type: {extracted_data.get('document_metadata', {}).get('document_type', 'Unknown')}
 - Broker: {extracted_data.get('document_metadata', {}).get('broker_name', 'Unknown')}
-- Confidence Score: {extracted_data.get('confidence_scores', {}).get('overall', 0):.0%}
+- Confidence: {extracted_data.get('confidence_scores', {}).get('overall', 0):.0%}
 
-**DEBUG - Raw Extraction Results:**
-- Portfolio Entries Found in JSON: {len(portfolio_entries)}
-- Extraction Notes: {', '.join(extraction_notes) if extraction_notes else 'None'}
-
-**Matching Results:**
+**Results:**
 - **Instruments Found & Selected**: {newly_selected}
 - **Portfolio Entries Created**: {imported}
 - **Unmatched Entries**: {unmatched}
-
 """
             
-            # Add portfolio entries details if found
-            if portfolio_entries:
-                success_message += "**DEBUG - Extracted Portfolio Entries:**\n"
-                for i, entry in enumerate(portfolio_entries[:5]):  # Show first 5
-                    success_message += f"• {entry.get('instrument_name', 'N/A')} ({entry.get('ticker_symbol', 'N/A')}) - Qty: {entry.get('quantity', 'N/A')}\n"
-            else:
-                success_message += "**DEBUG - No portfolio entries were extracted from the JSON response**\n"
-            
-            # Add details about newly selected instruments
             if newly_selected > 0:
-                success_message += """
-**Instruments Automatically Added to Your Selection:**
-"""
-                for inst in import_result.get('newly_selected', [])[:5]:  # Show first 5
+                success_message += "\n**Instruments Added to Your Selection:**\n"
+                for inst in import_result.get('newly_selected', [])[:5]:
                     success_message += f"• {inst.get('name')} ({inst.get('ticker', 'N/A')})\n"
                 if newly_selected > 5:
                     success_message += f"• ... and {newly_selected - 5} more\n"
             
-            # Add info about unmatched entries
             if unmatched > 0:
                 success_message += f"""
-**Note**: {unmatched} entries from your PDF couldn't be matched to instruments in our database. 
-You may need to search for these manually on the main search page.
+**Note:** {unmatched} entries from your PDF couldn't be matched to instruments in our database. You may need to search for these manually on the main search page.
 """
             
             success_message += """
 **Next Steps:**
-1. Navigate to the 'My Portfolio' page to review the pre-populated share transfer data
+1. Navigate to **My Portfolio** to review the pre-populated share transfer data
 2. Confirm or edit the extracted values as needed
 3. Complete any missing information
 4. Proceed to submit your results
-
-The system has automatically searched for and selected the instruments from your PDF that were found in our database.
-            """
+"""
             
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": success_message
             })
             
-            # Clear the pending PDF
             del st.session_state['pending_pdf']
             
             st.success("Data extracted successfully! Navigate to 'My Portfolio' to review.")
-            if st.button("📊 Go to My Portfolio", type="primary", use_container_width=True):
+            if st.button("Go to My Portfolio", type="primary", use_container_width=True):
                 st.switch_page("pages/2_Portfolio.py")
             
             st.rerun()
             
         except Exception as e:
-            error_message = f"I encountered an error extracting data: {str(e)}. You can still proceed with manual portfolio configuration."
+            error_message = "I encountered an error extracting data. You can still proceed with manual portfolio configuration."
             
             st.error(error_message)
-            st.write(f"🔍 **DEBUG**: Exception details: {type(e).__name__}: {str(e)}")
-            
-            # Show full traceback for debugging
-            import traceback
-            with st.expander("🔍 Full Error Traceback", expanded=False):
-                st.code(traceback.format_exc())
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": error_message

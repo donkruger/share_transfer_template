@@ -309,36 +309,6 @@ with col5:
             st.session_state.confirm_clear_portfolio = True
             st.warning("Click again to confirm clearing all portfolio data")
 
-# NEW: AI Data Import Section
-st.markdown("---")
-st.markdown("### AI Data Import")
-
-with st.expander("Import from AI Agent", expanded=False):
-    st.markdown("""
-    **For Future Integration:** This section will support importing portfolio data 
-    from external AI agents that parse PDF statements.
-    
-    **JSON Format Expected:**
-    - Structured portfolio data with confidence scores
-    - Instrument identification via ticker, ISIN, or name
-    - Field-level confidence metadata for user review
-    """)
-    
-    # Placeholder for future AI import functionality
-    uploaded_json = st.file_uploader(
-        "Upload AI-Generated Portfolio JSON",
-        type=['json'],
-        help="Upload JSON file from AI agent (PDF statement parser)",
-        disabled=True  # Disabled until AI integration is implemented
-    )
-    
-    if uploaded_json:
-        st.info("🚧 AI import functionality will be implemented in future release")
-        # Future implementation:
-        # json_data = json.load(uploaded_json)
-        # result = PortfolioService.import_ai_portfolio_data(json_data)
-        # Display import results and review interface
-
 # Reset confirmation state
 if 'confirm_clear_portfolio' in st.session_state and st.session_state.confirm_clear_portfolio:
     if st.button("Cancel Clear", key="cancel_clear_portfolio"):

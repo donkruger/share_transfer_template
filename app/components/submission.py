@@ -51,7 +51,6 @@ def handle_search_results_submission(selected_instruments: List[Dict], user_info
             pdf_bytes = make_search_results_pdf(submission_data)
         except Exception as e:
             st.error(f"PDF generation failed: {e}")
-            st.error(f"Submission data: {str(submission_data)[:500]}")
             pdf_bytes = None
 
     # Success message with balloons
@@ -81,9 +80,6 @@ def handle_search_results_submission(selected_instruments: List[Dict], user_info
             use_container_width=True
         )
 
-    # Raw JSON data (collapsed by default)
-    with st.expander("Show raw submission data"):
-        st.json(submission_data, expanded=False)
 
 
 def send_search_results_email(submission_data: Dict[str, Any]):
@@ -374,18 +370,11 @@ Smart Instrument Finder System
         msg.attach(transfer_part)
         
         # Send email using existing pattern
-        st.info(f"Attempting to send email to: {recipient_email}")
-        
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender_email, sender_password)
             server.send_message(msg)
-            st.info("Email sent successfully via SMTP")
         
-        st.success(f"Portfolio submission sent successfully!")
-        st.info(f"Email sent to: {recipient_email}")
-        st.info(f"PDF Report: {base_filename}.pdf")
-        st.info(f"Instruments CSV: {base_filename}_instruments.csv")
-        st.info(f"Share Transfer CSV: {base_filename}_share_transfer.csv")
+        st.success("Portfolio submission sent successfully! A confirmation email has been dispatched.")
         
     except Exception as e:
         st.error(f"Email sending failed: {str(e)}")

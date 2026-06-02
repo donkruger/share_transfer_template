@@ -1,0 +1,14 @@
+---
+description: "Architecture and conventions"
+globs:
+alwaysApply: true
+---
+
+
+## Upon successful implementation of the requirement, document the implementation in the /docs folder. 
+- create a dedicated MD file documentation summary of the feature.
+- if any changes are made to existing features with existing documentation, be sure to update the documentation accordingly. 
+- add a hyper concise change log summary to docs/CHANGE_LOG.md with a date:time stamp.
+- Important core architectural creations and changes should be described in the README file of the project. 
+- Note if strictly tasked with creating documentation in the docs folder it is not necessary to write to the CHANGE_LOG.md and README.md files, that should be reserved for when applicable code changes are made to the project.
+- whenever an existing use-case is significantly modified, or a new use case (or feature) is added, be sure to document this in the UX_USE_CASES.md folder.

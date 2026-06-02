@@ -19,7 +19,7 @@ class GeminiPDFProcessor:
     def __init__(self, api_key: str):
         """Initialize the Gemini PDF processor with API key."""
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-3.5-flash')
         self.extraction_prompt = self._create_extraction_prompt()
         
     def _create_extraction_prompt(self) -> str:

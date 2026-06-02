@@ -21,83 +21,16 @@ from app.components.feedback import render_feedback_component
 from app.search.wallet_filter import WalletFilterEngine
 from app.services.selection_manager import SelectionManager
 from app.services.portfolio_service import PortfolioService
-from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, SIDEBAR_GRADIENT_CSS
+from app.styling import GOOGLE_FONTS_CSS, GRADIENT_TITLE_CSS, FADE_IN_CSS, ONBOARDING_SECTION_CSS, SIDEBAR_GRADIENT_CSS, SIDEBAR_FINAL_ENFORCEMENT_CSS
 from app.utils import initialize_state
 
 initialize_state()
 st.markdown(GOOGLE_FONTS_CSS, unsafe_allow_html=True)
 st.markdown(GRADIENT_TITLE_CSS, unsafe_allow_html=True)
 st.markdown(FADE_IN_CSS, unsafe_allow_html=True)
-
-# Apply sidebar gradient styling to match main page
+st.markdown(ONBOARDING_SECTION_CSS, unsafe_allow_html=True)
 st.markdown(SIDEBAR_GRADIENT_CSS, unsafe_allow_html=True)
-
-# Fix sidebar metrics white background issue on this page
-st.markdown("""
-<style>
-    /* Remove white background from sidebar metrics - using correct selectors */
-    [data-testid="stSidebar"] .stMetric {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    [data-testid="stSidebar"] div[data-testid="metric-container"] {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Target the emotion-cache classes directly if needed */
-    [data-testid="stSidebar"] .st-emotion-cache-0,
-    [data-testid="stSidebar"] .e14qm3310,
-    [data-testid="stSidebar"] .e1f1d6gn0,
-    [data-testid="stSidebar"] [class*="st-emotion-cache"] {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Ensure all child elements are also transparent */
-    [data-testid="stSidebar"] .stMetric * {
-        background-color: transparent !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Additional comprehensive spacing removal for this page and custom button color
-st.markdown("""
-<style>
-    /* Ensure gradient title sits flush at top */
-    .gradient-title {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    /* Remove any remaining top spacing */
-    .main .block-container > div:first-child {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    /* Custom color for submit button to match brand color */
-    .stButton > button[data-testid="baseButton-primary"] {
-        background-color: #f4942a !important;
-        border-color: #f4942a !important;
-    }
-    
-    .stButton > button[data-testid="baseButton-primary"]:hover {
-        background-color: #e8530f !important;
-        border-color: #e8530f !important;
-    }
-    
-    .stButton > button[data-testid="baseButton-primary"]:focus {
-        background-color: #f4942a !important;
-        border-color: #f4942a !important;
-        box-shadow: 0 0 0 0.2rem rgba(244, 148, 42, 0.5) !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(SIDEBAR_FINAL_ENFORCEMENT_CSS, unsafe_allow_html=True)
 
 render_sidebar()
 
@@ -135,18 +68,6 @@ if not selected_instruments:
         if st.button("Get AI Help", use_container_width=True):
             st.switch_page("pages/1_AI_Assistance.py")
     st.stop()
-
-# Display user and context information with enhanced summary - COMMENTED OUT
-# st.markdown("### Submission Details")
-# col1, col2, col3, col4 = st.columns(4)
-# with col1:
-#     st.info(f"**User:** {user_name}")
-# with col2:
-#     st.info(f"**User ID:** {user_id}")
-# with col3:
-#     st.info(f"**Wallet Context:** {selected_wallet}")
-# with col4:
-#     st.info(f"**Instruments:** {len(selected_instruments)}")
 
 # Enhanced selection summary
 if selection_summary['total_count'] > 0:
@@ -289,7 +210,7 @@ st.markdown("### Declaration & Submit")
 
 # Declaration checkbox
 declaration_accepted = st.checkbox(
-    "I declare that the information provided is accurate and I understand that this submission is for informational purposes to help me find available instruments in the EasyEquities ecosystem.",
+    "I confirm the information above is accurate to the best of my knowledge.",
     key="declaration_accepted"
 )
 
@@ -304,11 +225,10 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Selected Instruments", len(selected_instruments))
 with col2:
-    exact_matches = sum(1 for inst in selected_instruments if inst.get('match_type', '').startswith('exact'))
-    st.metric("Exact Matches", exact_matches)
+    portfolio_status = "Complete" if portfolio_complete else "Incomplete"
+    st.metric("Portfolio Status", portfolio_status)
 with col3:
-    avg_relevance = sum(inst.get('relevance_score', 0) for inst in selected_instruments) / len(selected_instruments)
-    st.metric("Avg. Relevance", f"{avg_relevance:.1f}%")
+    st.metric("Wallet", selected_wallet or "All Wallets")
 
 # Final submission button
 if st.button("Submit Search Results", 
@@ -357,10 +277,17 @@ if st.button("Submit Search Results",
         # Success actions
         st.markdown("### Submission Successful!")
         
+        st.info("""
+        **What happens next?**
+        
+        1. You will receive an email confirmation with your results and attached reports
+        2. The EasyEquities team will review your submission and contact you with next steps
+        3. You can download your PDF report and CSV data above for your records
+        """)
+        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Start New Search", use_container_width=True):
-                # Clear search state for new search (selections already cleared above)
                 st.session_state.current_results = []
                 st.switch_page("main.py")
         
@@ -373,27 +300,6 @@ if st.button("Submit Search Results",
     except Exception as e:
         st.error(f"Submission failed: {e}")
         st.error("Please try again or contact support if the problem persists.")
-
-# Help section
-with st.expander("What happens after submission?", expanded=False):
-    st.markdown("""
-    **After you submit your search results:**
-    
-    1. **Email Confirmation**: You'll receive an email with your search results and selected instruments
-    
-    2. **PDF Report**: A comprehensive PDF report will be generated with all your selections
-    
-    3. **CSV Data**: Raw data in CSV format for your own analysis
-    
-    4. **Next Steps**: The EasyEquities team will review your submission and may contact you with:
-       - Availability confirmation for your selected instruments
-       - Information about minimum investment amounts
-       - Account setup assistance if needed
-       - Alternative instrument suggestions
-    
-    **Note**: This is an informational service to help you discover available instruments. 
-    It does not constitute financial advice or create any trading obligations.
-    """)
 
 # Footer
 st.markdown("---")

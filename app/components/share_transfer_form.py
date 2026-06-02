@@ -158,7 +158,7 @@ class ShareTransferForm:
                 selected_from_index = st.selectbox(
                     "Broker From *",
                     range(len(broker_options)),
-                    format_func=lambda x: f"{broker_ids[x]} - {broker_labels[x]}",
+                    format_func=lambda x: broker_labels[x],
                     index=existing_from_index,
                     key=f"broker_from_{form_key}",
                     help="Source broker for the transfer"
@@ -180,7 +180,7 @@ class ShareTransferForm:
                 selected_to_index = st.selectbox(
                     "Broker To *",
                     range(len(broker_options)),
-                    format_func=lambda x: f"{broker_ids[x]} - {broker_labels[x]}",
+                    format_func=lambda x: broker_labels[x],
                     index=existing_to_index,
                     key=f"broker_to_{form_key}",
                     help="Destination broker for the transfer"
